@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/GuiHui-huimy/LabPress">
+  <a href="https://github.com/GuiHui-huimy/LabPress" target="_blank">
     <img src="ReadImg/labpress-logo.png" width="581" alt="LabPress">
   </a>
 </p>
@@ -11,11 +11,13 @@
 </p>
 
 <p align="center">
-  <a href="https://lab.huimy.com"><img
+  <a href="https://lab.huimy.com" target="_blank"><img
     src="https://img.shields.io/badge/Demo-Online%20Demo-brightgreen"
     alt="Online Demo"
   /></a>
-  <a href="https://github.com/GuiHui-huimy/LabPress/actions"></a>
+<a href="https://comm.huimy.com" target="_blank">
+  <img src="https://img.shields.io/badge/Forum-Discourse-blue?style=flat-square&logo=discourse" alt="Forum">
+</a>
   <img src="https://img.shields.io/badge/PHP-7.4%2B-blue" alt="PHP Version">
   <img src="https://img.shields.io/badge/MySQL-5.7%2B-orange" alt="MySQL Version">
   <img src="https://img.shields.io/badge/License-GPL%20v3-blue" alt="License">
@@ -26,7 +28,7 @@
 </p>
 
 <p align="center">
-  <a href="https://lab.huimy.top">
+  <a href="https://lab.huimy.top" target="_blank">
     <img src="ReadImg/screenshot-home.png" width="700" />
   </a>
 </p>
@@ -34,7 +36,7 @@
 <p align="center">
   <em>
     Check out the online demo –
-    <a href="https://lab.huimy.top">lab.huimy.top</a>.
+    <a href="https://lab.huimy.top" target="_blank">lab.huimy.top</a>.
   </em>
 </p>
 
@@ -259,6 +261,8 @@ LabPress/
 ├── news-detail.php # News detail page
 ├── publications.php # Publications list page
 ├── category.php # Category filtered project list
+│
+├── labpressexample.sql # Example database dump
 │
 ├── .gitignore # Git ignore rules
 ├── LICENSE # Open-source license (MIT)
