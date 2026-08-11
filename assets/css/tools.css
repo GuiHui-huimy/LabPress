@@ -1,0 +1,366 @@
+    /* ===== 全局变量与重置 (与主页一致) ===== */
+    :root {
+        --primary-dark: #333333;
+        --accent-teal: #fe00005e;
+        --bg-light: #f8f9fa;
+        --text-dark: #2c3e50;
+        --text-light: #6c757d;
+        --border-light: #e9ecef;
+        --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.05);
+        --shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.1);
+        --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: var(--font-main);
+        color: var(--text-dark);
+        line-height: 1.6;
+        background-color: #ffffff;
+    }
+
+    .container {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    /* ===== 导航栏 (始终不透明深蓝) ===== */
+    .site-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 1rem 0;
+        z-index: 1000;
+        background-color: var(--primary-dark);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .header-inner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .logo a {
+        color: white;
+        font-size: 1.8rem;
+        font-weight: 600;
+        text-decoration: none;
+        letter-spacing: 1px;
+    }
+
+    .logo span {
+        color: var(--accent-teal);
+    }
+
+    .main-nav ul {
+        display: flex;
+        list-style: none;
+        gap: 2rem;
+    }
+
+    .main-nav a {
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        font-weight: 500;
+        padding-bottom: 0.25rem;
+        border-bottom: 2px solid transparent;
+        transition: color 0.3s, border-color 0.3s;
+    }
+
+    .main-nav a:hover,
+    .main-nav a.active {
+        color: white;
+        border-bottom-color: var(--accent-teal);
+    }
+
+    /* 移动端导航折叠 */
+    .menu-toggle {
+        display: none;
+        font-size: 1.8rem;
+        color: white;
+        cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+        .menu-toggle {
+            display: block;
+        }
+
+        .main-nav {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: var(--primary-dark);
+            padding: 1rem 0;
+            clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+            transition: clip-path 0.4s ease;
+        }
+
+        .main-nav.active {
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+        }
+
+        .main-nav ul {
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+    }
+
+    /* ===== 主内容区 ===== */
+    .main-content {
+        margin-top: 80px;
+        /* 为固定导航栏留出空间 */
+        min-height: 60vh;
+        padding: 3rem 0 5rem;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: 600;
+        color: var(--primary-dark);
+        margin-bottom: 2rem;
+        position: relative;
+        padding-bottom: 0.75rem;
+    }
+
+    .page-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 80px;
+        height: 4px;
+        background: var(--accent-teal);
+        border-radius: 2px;
+    }
+
+    /* ===== 工具卡片 (仿成大都，但融入我们的风格) ===== */
+    .tool-card {
+        background-color: var(--bg-light);
+        border: 1px solid var(--border-light);
+        border-radius: 5px;
+        margin-bottom: 2.5rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+    }
+
+    .tool-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-hover);
+    }
+
+    .tool-card-body {
+        padding: 2rem;
+    }
+
+    .tool-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 3px solid var(--accent-teal);
+        padding-bottom: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .tool-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .tool-badge {
+        background-color: var(--primary-dark);
+        color: white;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        letter-spacing: 0.5px;
+    }
+
+    .tool-name {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: var(--primary-dark);
+        margin: 0;
+    }
+
+    .tool-links a {
+        color: var(--text-light);
+        font-size: 1.5rem;
+        margin-left: 1rem;
+        transition: color 0.3s;
+    }
+
+    .tool-links a:hover {
+        color: var(--accent-teal);
+    }
+
+    .tool-content {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+    }
+
+    .tool-image {
+        flex: 0 0 200px;
+        text-align: center;
+    }
+
+    .tool-image img {
+        max-width: 100%;
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        background-color: white;
+        padding: 0.5rem;
+    }
+
+    .tool-image i {
+        font-size: 8rem;
+        color: var(--primary-dark);
+        opacity: 0.8;
+    }
+
+    .tool-description {
+        flex: 1;
+        color: var(--text-light);
+        line-height: 1.8;
+    }
+
+    .tool-footer {
+        margin-top: 1.5rem;
+        text-align: right;
+    }
+
+    .btn-detail {
+        display: inline-block;
+        background: transparent;
+        border: 2px solid var(--accent-teal);
+        color: var(--accent-teal);
+        padding: 0.6rem 2rem;
+        border-radius: 30px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .btn-detail:hover {
+        background: var(--accent-teal);
+        color: white;
+    }
+
+    /* 加载提示 */
+    .loading {
+        text-align: center;
+        padding: 4rem;
+        color: var(--text-light);
+        font-size: 1.2rem;
+    }
+
+    .error {
+        text-align: center;
+        padding: 4rem;
+        color: #dc3545;
+        font-size: 1.2rem;
+    }
+
+    @media (max-width: 768px) {
+        .tool-content {
+            flex-direction: column;
+        }
+
+        .tool-image {
+            flex: 0 0 auto;
+            max-width: 100%;
+        }
+
+        .tool-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .tool-links {
+            align-self: flex-end;
+        }
+    }
+
+    /* ===== 扩展页脚 (与主页一致) ===== */
+    .site-footer {
+        background-color: var(--primary-dark);
+        padding: 4rem 0 3rem;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .footer-content {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr;
+        gap: 3rem;
+        align-items: start;
+    }
+
+    .footer-copyright {
+        grid-column: 1;
+    }
+
+    .footer-copyright p {
+        margin-bottom: 0.5rem;
+    }
+
+    .footer-quote {
+        grid-column: 2;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1.5rem;
+        border-left: 4px solid var(--accent-teal);
+    }
+
+    .footer-quote p {
+        font-style: italic;
+        margin-bottom: 0.5rem;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .footer-quote cite {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .footer-links {
+        grid-column: 3;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    .footer-links a {
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        transition: color 0.3s;
+    }
+
+    .footer-links a:hover {
+        color: var(--accent-teal);
+    }
+
+    @media (max-width: 768px) {
+        .footer-content {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .footer-quote,
+        .footer-links {
+            grid-column: auto;
+        }
+    }

@@ -1,0 +1,23 @@
+<?php
+return [
+    'plugin_name' => 'Dynamic Multi-Language',
+    'plugin_description' => 'Provide multi-language translation for navigation menus, slides, about us, etc.',
+    'tab_nav_menus' => 'Nav Menus',
+    'tab_slides' => 'Slides',
+    'tab_about' => 'About / Research',
+    'tab_plugin_lang' => 'Plugin Language',
+    'original_content' => 'Original ({locale})',
+    'translation' => 'Translation',
+    'save_all' => 'Save All Translations',
+    'menu_title' => 'Menu Title',
+    'slide_title' => 'Title',
+    'slide_description' => 'Description',
+    'about_us' => 'About Us',
+    'research_title' => 'Research Title',
+    'research_subtitle' => 'Research Subtitle',
+    'plugin_lang_help' => 'Edit the text for this plugin itself. Changes take effect immediately.',
+    'key' => 'Key',
+    'default_value' => 'Default Value',
+    'select_source_locale' => 'Select Source Locale (Original Content Language)',
+    'select_source_locale_help' => 'All original content will be considered as this language, and translations will be generated for other languages except this one.',
+];

@@ -1,0 +1,27 @@
+<?php
+return [
+    'plugin_name' => '动态多语言',
+    'plugin_description' => '为导航菜单、轮播图、关于我们等提供多语言翻译管理',
+    'tab_nav_menus' => '导航菜单',
+    'tab_slides' => '轮播图',
+    'tab_about' => '关于我们 / 研究方向',
+    'tab_plugin_lang' => '插件语言',
+    'original_content' => '原始内容 ({locale})',
+    'translation' => '翻译',
+    'save_all' => '保存所有翻译',
+    'menu_title' => '菜单标题',
+    'slide_title' => '标题',
+    'slide_description' => '描述',
+    'about_us' => '关于我们',
+    'research_title' => '研究方向标题',
+    'research_subtitle' => '研究方向副标题',
+    'plugin_lang_help' => '此处可编辑本插件自身的界面文本翻译。修改后立即生效。',
+    'key' => '键',
+    'default_value' => '默认值',
+    'select_source_locale' => '选择源语言（原始内容语言）',
+    'select_source_locale_help' => '所有原始内容将被视为该语言，翻译将针对除源语言以外的其他语言。',
+
+    'tab_dynamic_content' => '动态内容',
+    'dynamic_content_desc' => '以下是从数据库中自动提取的统计标签和研究方向卡片文本。',
+    'no_dynamic_content' => '暂无动态内容需要翻译。',
+];
