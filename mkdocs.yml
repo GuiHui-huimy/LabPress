@@ -1,0 +1,182 @@
+# Project information
+site_name: HUI-MY ×LabPress Documentation
+site_url: https://guihui-huimy.github.io/LabPress/
+site_author: HUI-MY LabPress Team
+site_description: >-
+  Open-Source Academic CMS – PHP & MySQL, hook-driven plugins, full i18n.
+
+# Repository
+repo_name: GuiHui-huimy/LabPress
+repo_url: https://github.com/GuiHui-huimy/LabPress
+edit_uri: edit/main/docs/
+
+# Copyright
+copyright: Copyright &copy; 2026 HUIMY - LabPress
+
+# Configuration
+theme:
+  name: material
+  custom_dir: docs/material/overrides
+  features:
+    - content.action.edit
+    - content.action.view
+    - content.code.annotate
+    - content.code.copy
+    - content.tooltips
+    - navigation.footer
+    - navigation.indexes
+    - navigation.sections
+    - navigation.tabs
+    - navigation.autohide
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/link
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch-off
+        name: Switch to system preference
+  font: false
+  favicon: assets/favicon.png
+  icon:
+    logo: material/flask
+
+extra_css:
+  - assets/fonts/roboto.css
+  - assets/fonts/roboto-mono.css
+  - assets/stylesheets/extra.css
+  - material/overrides/assets/stylesheets/home.css
+
+
+
+
+# Plugins
+plugins:
+  # - blog     # 如果暂时不需要博客可以注释掉
+  - search:
+      separator: '[\s\u200b\-_,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - minify:
+      minify_html: true
+
+# Hooks
+hooks:
+  - docs/material/overrides/hooks/shortcodes.py
+  - docs/material/overrides/hooks/translations.py
+
+# Additional configuration
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/GuiHui-huimy/LabPress
+    - icon: fontawesome/solid/globe
+      link: https://labpress.huimy.top          # 主站
+    - icon: fontawesome/solid/newspaper
+      link: https://blog.huimy.top              # 博客
+    - icon: fontawesome/solid/comments
+      link: https://forum.huimy.top             # 社区
+    - icon: fontawesome/solid/flask
+      link: https://your-lab-website.com        # 实验室（替换为真实链接）
+
+# Extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      normalize_issue_symbols: true
+      repo_url_shorthand: true
+      user: GuiHui-huimy
+      repo: LabPress
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      auto_append:
+        - includes/mkdocs.md
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+      combine_header_slug: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Page tree (你的 LabPress 导航)
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Overview: getting-started/overview.md
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quick-start.md
+    - Configuration: getting-started/configuration.md
+  - Setup:
+    - Site Settings: setup/site-settings.md
+    - Navigation Menu: setup/navigation.md
+    - Plugin Management: setup/plugins.md
+    - Theme: setup/theme.md
+  - Content Management:
+    - Publications: content/publications.md
+    - Slides: content/slides.md
+    - Tools: content/tools.md
+    - Projects: content/projects.md
+    - News: content/news.md
+    - Users: content/users.md
+  - Internationalization:
+    - Overview: i18n/overview.md
+    - Core Language Packs: i18n/core-lang.md
+    - Dynamic Multi-Language: i18n/dynamic-multilang.md
+  - Plugin Development:
+    - Introduction: plugins-dev/intro.md
+    - Building a Plugin: plugins-dev/develop.md
+    - Hooks Reference: plugins-dev/hooks-reference.md
+    - Examples: plugins-dev/examples.md
+  - Reference:
+    - API: reference/api.md
+    - Database Schema: reference/database.md
+    - Developer Guide: reference/developer-resources.md
+  - Contributing: contributing.md
+  - Security: security.md
+  - Changelog: changelog.md
