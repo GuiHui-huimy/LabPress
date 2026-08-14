@@ -2,8 +2,10 @@
 /**
  * Plugin Name: Dynamic Multi-Language
  * Description: 为导航菜单、页脚链接、轮播图、关于我们、研究方向提供动态多语言翻译管理。
- * Version: 2.0.0
+ * Version: 2.0.1
  * Author: LabPress Community
+ * version: 2.0.1 change 2026-08-14
+ *      - revise the language key to 'ml_' prefix ,to avoid conflict with core language key.
  */
 
 // 安装：创建翻译表
@@ -111,7 +113,7 @@ LabPress_Hooks::addAction('init', function() {
 });
 
 // ========== 后台管理页面（独立文件，不影响前台） ==========
-LabPress::registerAdminPage('dynamic-multilang', '🌐 Dynamic Multi-Language', function() {
+LabPress::registerAdminPage('dynamic-multilang', __('ml_plugin_name'), function() {
     require_once __DIR__ . '/admin-page.php';
 });
 

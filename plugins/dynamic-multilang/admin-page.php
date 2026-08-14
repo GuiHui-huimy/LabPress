@@ -70,15 +70,15 @@ $pluginKeys = file_exists($pluginLangFile) ? include $pluginLangFile : [];
 
 $totalTrans = $db->query("SELECT COUNT(*) FROM ml_translations")->fetchColumn();
 if ($totalTrans == 0) {
-    echo '<div class="alert alert-warning">⚠️ ' . __('no_translations_yet', 'admin') . '</div>';
+    echo '<div class="alert alert-warning">Warning: ' . __('no_translations_yet', 'admin') . '</div>';
 }
 ?>
 <div class="card">
-    <div class="card-header"><h3>🌐 <?= __('plugin_name') ?></h3></div>
+    <div class="card-header"><h3><?= __('ml_plugin_name','plugin:dynamic-multilang') ?></h3></div>
     <div class="card-body">
         <form method="post" id="ml-form">
             <div class="form-group row">
-                <label class="col-sm-3 col-form-label"><?= __('select_source_locale') ?></label>
+                <label class="col-sm-3 col-form-label"><?= __('ml_select_source_locale','plugin:dynamic-multilang') ?></label>
                 <div class="col-sm-4">
                     <select name="ml_source_locale" class="form-control" onchange="this.form.submit()">
                         <?php foreach ($languages as $lang): ?>
@@ -88,15 +88,15 @@ if ($totalTrans == 0) {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <small class="col-sm-5 form-text text-muted"><?= __('select_source_locale_help') ?></small>
+                <small class="col-sm-5 form-text text-muted"><?= __('ml_select_source_locale_help','plugin:dynamic-multilang') ?></small>
             </div>
             <hr>
             <ul class="nav nav-tabs" id="mlTabs" role="tablist">
-                <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#nav-menus"><?= __('tab_nav_menus') ?></a></li>
-                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#slides"><?= __('tab_slides') ?></a></li>
-                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#about-us"><?= __('tab_about') ?></a></li>
-                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#dynamic-content"><?= __('tab_dynamic_content') ?></a></li>
-                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#plugin-lang"><?= __('tab_plugin_lang') ?></a></li>
+                <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#nav-menus"><?= __('ml_tab_nav_menus','plugin:dynamic-multilang') ?></a></li>
+                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#slides"><?= __('ml_tab_slides','plugin:dynamic-multilang') ?></a></li>
+                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#about-us"><?= __('ml_tab_about','plugin:dynamic-multilang') ?></a></li>
+                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#dynamic-content"><?= __('ml_tab_dynamic_content','plugin:dynamic-multilang') ?></a></li>
+                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#plugin-lang"><?= __('ml_tab_plugin_lang','plugin:dynamic-multilang') ?></a></li>
             </ul>
             <div class="tab-content mt-3">
                 <!-- 导航菜单 -->
@@ -106,12 +106,12 @@ if ($totalTrans == 0) {
                         <div class="card-header"><?= htmlspecialchars($menu['location']) ?> - <?= htmlspecialchars($menu['title']) ?></div>
                         <div class="card-body">
                             <div class="form-group">
-                                <label><?= str_replace('{locale}', $sourceLocale, __('original_content')) ?></label>
+                                <label><?= str_replace('{locale}', $sourceLocale, __('ml_original_content','plugin:dynamic-multilang')) ?></label>
                                 <input type="text" class="form-control" value="<?= htmlspecialchars($menu['title']) ?>" readonly>
                             </div>
                             <?php foreach ($targetLocales as $lang): ?>
                             <div class="form-group">
-                                <label><?= $lang['flag'] . ' ' . $lang['name'] ?> <?= __('translation') ?></label>
+                                <label><?= $lang['flag'] . ' ' . $lang['name'] ?> <?= __('ml_translation','plugin:dynamic-multilang') ?></label>
                                 <input type="text" class="form-control"
                                        name="translations[nav_menu][<?= $menu['id'] ?>][title][<?= $lang['locale'] ?>]"
                                        value="<?= htmlspecialchars(ml_get_translation('nav_menu', $menu['id'], 'title', $lang['locale']) ?: '') ?>">
@@ -126,29 +126,29 @@ if ($totalTrans == 0) {
                 <div class="tab-pane" id="slides">
                     <?php foreach ($slides as $slide): ?>
                     <div class="card mb-2">
-                        <div class="card-header"><?= __('slide_title') ?> - <?= htmlspecialchars($slide['title']) ?></div>
+                        <div class="card-header"><?= __('ml_slide_title','plugin:dynamic-multilang') ?> - <?= htmlspecialchars($slide['title']) ?></div>
                         <div class="card-body">
-                            <h6><?= __('slide_title') ?></h6>
+                            <h6><?= __('ml_slide_title','plugin:dynamic-multilang') ?></h6>
                             <div class="form-group">
-                                <label><?= str_replace('{locale}', $sourceLocale, __('original_content')) ?></label>
+                                <label><?= str_replace('{locale}', $sourceLocale, __('ml_original_content','plugin:dynamic-multilang')) ?></label>
                                 <input type="text" class="form-control" value="<?= htmlspecialchars($slide['title']) ?>" readonly>
                             </div>
                             <?php foreach ($targetLocales as $lang): ?>
                             <div class="form-group">
-                                <label><?= $lang['flag'] . ' ' . $lang['name'] ?> <?= __('translation') ?></label>
+                                <label><?= $lang['flag'] . ' ' . $lang['name'] ?> <?= __('ml_translation','plugin:dynamic-multilang') ?></label>
                                 <input type="text" class="form-control"
                                        name="translations[slides][<?= $slide['id'] ?>][title][<?= $lang['locale'] ?>]"
                                        value="<?= htmlspecialchars(ml_get_translation('slides', $slide['id'], 'title', $lang['locale']) ?: '') ?>">
                             </div>
                             <?php endforeach; ?>
-                            <h6><?= __('slide_description') ?></h6>
+                            <h6><?= __('ml_slide_description','plugin:dynamic-multilang') ?></h6>
                             <div class="form-group">
-                                <label><?= str_replace('{locale}', $sourceLocale, __('original_content')) ?></label>
+                                <label><?= str_replace('{locale}', $sourceLocale, __('ml_original_content','plugin:dynamic-multilang')) ?></label>
                                 <textarea class="form-control" readonly><?= htmlspecialchars($slide['description']) ?></textarea>
                             </div>
                             <?php foreach ($targetLocales as $lang): ?>
                             <div class="form-group">
-                                <label><?= $lang['flag'] . ' ' . $lang['name'] ?> <?= __('translation') ?></label>
+                                <label><?= $lang['flag'] . ' ' . $lang['name'] ?> <?= __('ml_translation','plugin:dynamic-multilang') ?></label>
                                 <textarea class="form-control"
                                           name="translations[slides][<?= $slide['id'] ?>][description][<?= $lang['locale'] ?>]"><?= htmlspecialchars(ml_get_translation('slides', $slide['id'], 'description', $lang['locale']) ?: '') ?></textarea>
                             </div>
@@ -161,18 +161,18 @@ if ($totalTrans == 0) {
                 <!-- 关于我们 / 研究方向 -->
                 <div class="tab-pane" id="about-us">
                     <?php 
-                    $labels = ['about_us' => __('about_us'), 'research_title' => __('research_title'), 'research_subtitle' => __('research_subtitle')];
+                    $labels = ['about_us' => __('ml_about_us','plugin:dynamic-multilang'), 'research_title' => __('ml_research_title','plugin:dynamic-multilang'), 'research_subtitle' => __('ml_research_subtitle','plugin:dynamic-multilang')];
                     foreach (['about_us', 'research_title', 'research_subtitle'] as $field): ?>
                     <div class="card mb-2">
                         <div class="card-header"><?= $labels[$field] ?></div>
                         <div class="card-body">
                             <div class="form-group">
-                                <label><?= str_replace('{locale}', $sourceLocale, __('original_content')) ?></label>
+                                <label><?= str_replace('{locale}', $sourceLocale, __('ml_original_content','plugin:dynamic-multilang')) ?></label>
                                 <textarea class="form-control" readonly rows="3"><?= htmlspecialchars($siteConfig[$field]) ?></textarea>
                             </div>
                             <?php foreach ($targetLocales as $lang): ?>
                             <div class="form-group">
-                                <label><?= $lang['flag'] . ' ' . $lang['name'] ?> <?= __('translation') ?></label>
+                                <label><?= $lang['flag'] . ' ' . $lang['name'] ?> <?= __('ml_translation','plugin:dynamic-multilang') ?></label>
                                 <textarea class="form-control"
                                           name="translations[site_config][<?= $field ?>][config_value][<?= $lang['locale'] ?>]"><?= htmlspecialchars(ml_get_translation('site_config', $field, 'config_value', $lang['locale']) ?: '') ?></textarea>
                             </div>
@@ -184,9 +184,9 @@ if ($totalTrans == 0) {
 
                 <!-- 动态内容翻译 -->
                 <div class="tab-pane" id="dynamic-content">
-                    <p class="text-muted"><?= __('dynamic_content_desc') ?></p>
+                    <p class="text-muted"><?= __('ml_dynamic_content_desc','plugin:dynamic-multilang') ?></p>
                     <?php if (empty($dynamicItems)): ?>
-                        <p><?= __('no_dynamic_content') ?></p>
+                        <p><?= __('ml_no_dynamic_content','plugin:dynamic-multilang') ?></p>
                     <?php else: ?>
                         <?php foreach ($dynamicItems as $item): ?>
                         <?php $origText = $item['text']; ?>
@@ -196,14 +196,14 @@ if ($totalTrans == 0) {
                             </div>
                             <div class="card-body">
                                 <div class="form-group">
-                                    <label><?= str_replace('{locale}', $sourceLocale, __('original_content')) ?></label>
+                                    <label><?= str_replace('{locale}', $sourceLocale, __('original_content','plugin:dynamic-multilang')) ?></label>
                                     <input type="text" class="form-control" value="<?= htmlspecialchars($origText) ?>" readonly>
                                 </div>
                                 <?php foreach ($targetLocales as $lang): 
                                     $savedVal = $existingCustomTrans[$origText][$lang['locale']] ?? '';
                                 ?>
                                 <div class="form-group">
-                                    <label><?= $lang['flag'] . ' ' . $lang['name'] ?> <?= __('translation') ?></label>
+                                    <label><?= $lang['flag'] . ' ' . $lang['name'] ?> <?= __('ml_translation','plugin:dynamic-multilang') ?></label>
                                     <input type="text" class="form-control"
                                            name="translations[__custom][<?= htmlspecialchars($origText) ?>][text][<?= $lang['locale'] ?>]"
                                            value="<?= htmlspecialchars($savedVal) ?>">
@@ -217,12 +217,12 @@ if ($totalTrans == 0) {
 
                 <!-- 插件自身语言 -->
                 <div class="tab-pane" id="plugin-lang">
-                    <p class="text-muted"><?= __('plugin_lang_help') ?></p>
+                    <p class="text-muted"><?= __('ml_plugin_lang_help','plugin:dynamic-multilang') ?></p>
                     <table class="table table-sm">
                         <thead>
                             <tr>
-                                <th><?= __('key') ?></th>
-                                <th><?= __('default_value') ?> (<?= $sourceLocale ?>)</th>
+                                <th><?= __('ml_key','plugin:dynamic-multilang') ?></th>
+                                <th><?= __('ml_default_value','plugin:dynamic-multilang') ?> (<?= $sourceLocale ?>)</th>
                                 <?php foreach ($targetLocales as $lang): ?>
                                     <th><?= $lang['flag'] . ' ' . $lang['name'] ?></th>
                                 <?php endforeach; ?>
@@ -247,7 +247,7 @@ if ($totalTrans == 0) {
                     </table>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary mt-3"><?= __('save_all') ?></button>
+            <button type="submit" class="btn btn-primary mt-3"><?= __('ml_save_all','plugin:dynamic-multilang') ?></button>
         </form>
     </div>
 </div>

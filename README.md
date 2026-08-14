@@ -11,11 +11,11 @@
 </p>
 
 <p align="center">
-  <a href="https://lab.huimy.com" target="_blank"><img
+  <a href="https://lab.huimy.top" target="_blank"><img
     src="https://img.shields.io/badge/Demo-Online%20Demo-brightgreen"
     alt="Online Demo"
   /></a>
-<a href="https://comm.huimy.com" target="_blank">
+<a href="https://comm.huimy.top" target="_blank">
   <img src="https://img.shields.io/badge/Forum-Discourse-blue?style=flat-square&logo=discourse" alt="Forum">
 </a>
   <img src="https://img.shields.io/badge/PHP-7.4%2B-blue" alt="PHP Version">

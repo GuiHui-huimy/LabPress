@@ -336,14 +336,14 @@ function getLocale() {
  * @return string
  */
 function __($key, $module = 'common') {
-    static $lang = [];                // 合并后的所有翻译
-    static $loadedModules = [];       // 已加载的模块
-    static $pluginsLoaded = false;    // 插件语言包是否已加载
+    static $lang = [];
+    static $loadedModules = [];
+    static $pluginsLoaded = false;
 
     $locale = getLocale();
     $baseDir = __DIR__ . '/../languages/';
 
-    // 1. 加载公共语言包（common）
+    // 1. 加载公共语言包
     if (!isset($loadedModules['common'])) {
         $file = "{$baseDir}{$locale}/common.php";
         if (file_exists($file)) {
@@ -352,8 +352,8 @@ function __($key, $module = 'common') {
         $loadedModules['common'] = true;
     }
 
-    // 2. 按需加载指定模块
-    if ($module !== 'common' && !isset($loadedModules[$module])) {
+    // 2. 加载核心模块语言包（非插件模块）
+    if ($module !== 'common' && strpos($module, 'plugin:') !== 0 && !isset($loadedModules[$module])) {
         $file = "{$baseDir}{$locale}/{$module}.php";
         if (file_exists($file)) {
             $lang = array_merge($lang, include $file);
@@ -361,11 +361,35 @@ function __($key, $module = 'common') {
         $loadedModules[$module] = true;
     }
 
-    // 3. 自动加载所有已启用插件的语言包（仅一次）
+    // 3. 处理显式插件语言来源
+    if (strpos($module, 'plugin:') === 0) {
+        $pluginSlug = substr($module, 7);
+        $pluginSlug = preg_replace('/[^a-zA-Z0-9_-]/', '', $pluginSlug);
+        $pluginLangFile = __DIR__ . "/../plugins/{$pluginSlug}/languages/{$locale}.php";
+        echo '<!-- Transition Info: Looking for plugin language file ' . htmlspecialchars($pluginLangFile) . ' -->';
+        if (file_exists($pluginLangFile)) {
+            $pluginLang = include $pluginLangFile;
+            // 直接在当前调用中查找该插件语言包，避免污染全局 $lang
+            $value = $pluginLang;
+            foreach (explode('.', $key) as $segment) {
+                if (!is_array($value) || !array_key_exists($segment, $value)) {
+                    return LabPress_Hooks::applyFilters('translate', $key, $key, $locale, $module);
+                }
+                $value = $value[$segment];
+            }
+            return LabPress_Hooks::applyFilters('translate', $value, $key, $locale, $module);
+        }
+        // 如果插件语言文件不存在，回退到键名
+        echo '<!-- Transition Warning: Plugin language file not found for ' . htmlspecialchars($pluginSlug) . ' in locale ' . htmlspecialchars($locale) . ' -->';
+        return LabPress_Hooks::applyFilters('translate', $key, $key, $locale, $module);
+    }
+
+    // 4. 自动加载所有已启用插件的语言包（仅一次）
     if (!$pluginsLoaded) {
         $activePlugins = function_exists('getActivePlugins') ? getActivePlugins() : [];
         foreach ($activePlugins as $plugin) {
-            $pluginLangFile = __DIR__ . "/../plugins/{$plugin}/languages/{$locale}.php";
+            $pluginSlug = preg_replace('/[^a-zA-Z0-9_-]/', '', $plugin);
+            $pluginLangFile = __DIR__ . "/../plugins/{$pluginSlug}/languages/{$locale}.php";
             if (file_exists($pluginLangFile)) {
                 $lang = array_merge($lang, include $pluginLangFile);
             }
@@ -373,7 +397,7 @@ function __($key, $module = 'common') {
         $pluginsLoaded = true;
     }
 
-    // 4. 从合并后的数组中获取翻译，支持点号路径
+    // 5. 从合并后的全局数组中查找翻译
     $value = $lang;
     foreach (explode('.', $key) as $segment) {
         if (!is_array($value) || !array_key_exists($segment, $value)) {
@@ -382,7 +406,6 @@ function __($key, $module = 'common') {
         $value = $value[$segment];
     }
 
-    // 5. 允许插件通过过滤器修改翻译结果
     return LabPress_Hooks::applyFilters('translate', $value, $key, $locale, $module);
 }
 
