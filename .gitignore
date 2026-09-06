@@ -42,8 +42,12 @@ tmp
 *.swp
 *.swo
 *~
-
+# MkDocs
+site/
 # IDEs & Editors
+
+__pycache__/
+*.pyc
 .idea
 .vscode
 *.sublime-project
