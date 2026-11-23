@@ -24,7 +24,7 @@ $slides = getSlides();
             <tbody>
                 <?php foreach ($slides as $slide): ?>
                 <tr>
-                    <td><img src="/<?= htmlspecialchars($slide['image']) ?>" style="max-width:100px; border-radius:6px;"></td>
+                    <td><img src="/<?= htmlspecialchars($slide['image']) ?>" style="max-width:100px;"></td>
                     <td><?= htmlspecialchars($slide['title']) ?></td>
                     <td>
                         <button class="btn btn-sm btn-primary" onclick='editSlide(<?= json_encode($slide, JSON_UNESCAPED_UNICODE) ?>)'><?= __('edit', 'admin') ?></button>
@@ -37,8 +37,8 @@ $slides = getSlides();
     <?php endif; ?>
 </div>
 
-<div id="slideModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999;">
-    <div style="background:white; max-width:600px; margin:5% auto; padding:2rem; border-radius:8px;">
+<div id="slideModal" class="modal">
+    <div class="modal-content">
         <h3 id="slideModalTitle"><?= __('slide_add', 'admin') ?></h3>
         <form id="slideForm">
             <input type="hidden" name="id" value="">
@@ -78,3 +78,4 @@ window.__SLIDES_LANG = {
 };
 </script>
 <script src="assets/js/slides.js"></script>
+

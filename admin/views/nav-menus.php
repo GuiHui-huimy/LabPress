@@ -81,8 +81,8 @@ $footerMenus = $pdo->query("SELECT * FROM nav_menu WHERE location = 'footer' ORD
 </div>
 
 <!-- 弹窗（共用） -->
-<div id="menuModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999;">
-    <div style="background:white; max-width:500px; margin:5% auto; padding:2rem; border-radius:8px;">
+<div id="menuModal" class="modal">
+    <div class="modal-content">
         <h3 id="menuModalTitle"><?= __('nav_add_header', 'admin') ?></h3>
         <form id="menuForm">
             <input type="hidden" name="id" value="">
@@ -133,3 +133,4 @@ window.__NAV_LANG = {
 };
 </script>
 <script src="assets/js/nav-menus.js"></script>
+

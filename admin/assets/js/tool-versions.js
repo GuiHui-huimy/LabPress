@@ -102,7 +102,7 @@ function addChangeField(value = '') {
     div.style.marginBottom = '0.5rem';
     div.innerHTML = `
         <input type="text" class="form-control change-input" value="${value.replace(/"/g, '&quot;')}" placeholder="${window.__VERSION_LANG.change_placeholder}">
-        <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">×</button>
+        <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
     `;
     container.appendChild(div);
 }
@@ -119,7 +119,7 @@ function addDownloadField(name = '', url = '', icon = 'fas fa-download') {
         <input type="text" class="form-control download-name" placeholder="${window.__VERSION_LANG.download_name}" value="${name}" style="flex:1;">
         <input type="text" class="form-control download-url" placeholder="${window.__VERSION_LANG.download_url}" value="${url}" style="flex:2;">
         <input type="text" class="form-control download-icon" placeholder="${window.__VERSION_LANG.download_icon}" value="${icon}" style="flex:1;">
-        <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">×</button>
+        <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
     `;
     container.appendChild(div);
 }
@@ -179,3 +179,5 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
+
+

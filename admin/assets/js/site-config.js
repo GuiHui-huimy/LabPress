@@ -8,10 +8,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const container = document.getElementById('statItemsContainer');
         const div = document.createElement('div');
         div.className = 'stat-item-row';
-        div.style.marginBottom = '1rem';
-        div.style.border = '1px solid #ddd';
-        div.style.padding = '1rem';
-        div.style.borderRadius = '6px';
         div.innerHTML = `
             <div class="form-row">
                 <div class="form-group" style="flex:0.8;">
@@ -27,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <input type="text" name="stat_value[]" class="form-control" required>
                 </div>
                 <div class="form-group" style="display:flex; align-items:flex-end;">
-                    <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.stat-item-row').remove()">× ${L.delete || '删除'}</button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.stat-item-row').remove()"><i class="fas fa-times"></i> ${L.delete || '删除'}</button>
                 </div>
             </div>
         `;
@@ -39,10 +35,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const container = document.getElementById('researchCardsContainer');
         const div = document.createElement('div');
         div.className = 'research-card-row';
-        div.style.marginBottom = '1rem';
-        div.style.border = '1px solid #ddd';
-        div.style.padding = '1rem';
-        div.style.borderRadius = '6px';
         div.innerHTML = `
             <div class="form-row">
                 <div class="form-group">
@@ -58,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <textarea name="research_card_desc[]" class="form-control" rows="2"></textarea>
                 </div>
                 <div class="form-group" style="display:flex; align-items:flex-end;">
-                    <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.research-card-row').remove()">× ${L.delete || '删除'}</button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.research-card-row').remove()"><i class="fas fa-times"></i> ${L.delete || '删除'}</button>
                 </div>
             </div>
         `;
@@ -128,3 +120,5 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
+
+

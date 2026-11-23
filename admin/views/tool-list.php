@@ -39,8 +39,8 @@ $tools = getTools();
     <?php endif; ?>
 </div>
 
-<div id="toolModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999;">
-    <div style="background:white; max-width:600px; margin:5% auto; padding:2rem; border-radius:8px;">
+<div id="toolModal" class="modal">
+    <div class="modal-content">
         <h3 id="toolModalTitle"><?= __('tool_add', 'admin') ?></h3>
         <form id="toolForm">
             <input type="hidden" name="old_name" value="">
@@ -100,3 +100,4 @@ window.__TOOL_LIST_LANG = {
 };
 </script>
 <script src="assets/js/tool-list.js"></script>
+

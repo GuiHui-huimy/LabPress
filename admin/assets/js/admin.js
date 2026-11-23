@@ -34,4 +34,36 @@ document.addEventListener('DOMContentLoaded', function () {
             this.classList.toggle('expanded', !isVisible);
         });
     });
+
+    // 顶栏时钟
+    var clock = document.getElementById('adminClock');
+    if (clock) {
+        var tick = function () {
+            var d = new Date();
+            clock.textContent = [d.getHours(), d.getMinutes(), d.getSeconds()]
+                .map(function (n) { return String(n).padStart(2, '0'); })
+                .join(':');
+        };
+        tick();
+        window.setInterval(tick, 1000);
+    }
+
+    // 移动端侧边栏开关
+    var sidebarToggle = document.getElementById('sidebarToggle');
+    var sidebarOverlay = document.getElementById('sidebarOverlay');
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function () {
+            document.body.classList.toggle('sidebar-open');
+        });
+    }
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', function () {
+            document.body.classList.remove('sidebar-open');
+        });
+    }
+    document.querySelectorAll('.sidebar-nav a').forEach(function (link) {
+        link.addEventListener('click', function () {
+            document.body.classList.remove('sidebar-open');
+        });
+    });
 });

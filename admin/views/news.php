@@ -39,8 +39,8 @@ $newsList = getNews();
 </div>
 
 <!-- 新闻编辑弹窗 -->
-<div id="newsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999;">
-    <div style="background:white; max-width:700px; margin:5% auto; padding:2rem; border-radius:8px; max-height:80vh; overflow-y:auto;">
+<div id="newsModal" class="modal">
+    <div class="modal-content wide">
         <h3 id="newsModalTitle"><?= __('news_add', 'admin') ?></h3>
         <form id="newsForm">
             <input type="hidden" name="id" value="">
@@ -98,3 +98,4 @@ window.__NEWS_LANG = {
 };
 </script>
 <script src="assets/js/news-manage.js"></script>
+

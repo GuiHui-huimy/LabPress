@@ -21,32 +21,113 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html>
+<html <?= lp_html_lang_attr() ?>>
 <head>
-<title><?= __('login_title', 'admin') ?></title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<style>
-    body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #333; }
-    .login-box { background: white; padding: 3rem; border-radius: 16px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-    .login-box input { width: 100%; padding: 0.8rem; margin: 0.5rem 0; border: 1px solid #ddd; border-radius: 6px; }
-    .login-box button { width: 100%; background: #333; color: white; border: none; padding: 0.8rem; border-radius: 30px; cursor: pointer; }
-    .error { color: red; }
-</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><?= e(__('login_title', 'admin')) ?> — LabPress</title>
+<meta name="description" content="LabPress 管理后台登录">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/login.css">
 <?php LabPress_Hooks::doAction('before_head_end'); ?>
 </head>
-<body>
-    <div class="login-box">
-        <h2><?= __('login_title', 'admin') ?></h2>
-        <?php if ($error): ?>
-            <p class="error"><?= LabPress_Hooks::applyFilters('login_error_message', $error) ?></p>
-        <?php endif; ?>
-        <?php LabPress_Hooks::doAction('login_before_form'); ?>
-        <form method="post">
-            <input type="text" name="username" placeholder="<?= __('username', 'admin') ?>" required>
-            <input type="password" name="password" placeholder="<?= __('password', 'admin') ?>" required>
-            <button type="submit"><?= __('login_btn', 'admin') ?></button>
-        </form>
-        <?php LabPress_Hooks::doAction('login_after_form'); ?>
+
+<body data-auth-error="<?= $error ? '1' : '0' ?>">
+
+<div class="topbar">
+    <div class="topbar-inner">
+        <div class="brand">LAB<span>·</span>PRESS · SECURE ACCESS</div>
+        <div class="meta-line">
+            <span class="dot-live" aria-hidden="true"></span>
+            <span>系统运行正常</span>
+            <span class="sep">/</span>
+            <span id="clock">--:--:--</span>
+        </div>
     </div>
+</div>
+
+<main class="auth">
+
+    <section class="auth-visual">
+        <div class="visual-top">
+            <div class="eyebrow">Authentication · 身份验证</div>
+            <h2>进入<span class="hl">实验室</span><br>后台。</h2>
+            <p class="visual-sub">
+                在这里维护论文、项目、工具与科研动态，让站点内容与实验室的最新进展保持一致。
+            </p>
+
+            <ul class="visual-list">
+                <li><strong>统一入口。</strong>内容、成员与站点配置集中在一个控制台。</li>
+                <li><strong>权限分级。</strong>按角色开放论文、工具、用户与插件管理。</li>
+                <li><strong>操作留痕。</strong>发布、上传与插件变更均可追溯。</li>
+            </ul>
+        </div>
+
+        <div class="visual-foot">
+            <span><span class="dot-live" aria-hidden="true"></span> System operational</span>
+            <span>LAB-PRESS / node-01</span>
+        </div>
+    </section>
+
+    <section class="auth-panel">
+        <div class="form-wrap" id="formWrap">
+
+            <div class="eyebrow">Sign in · 登录</div>
+            <h1 class="form-title">欢迎回来<span class="accent">.</span></h1>
+            <p class="form-sub">
+                请输入管理员账号，继续进入你的工作台。
+            </p>
+
+            <?php LabPress_Hooks::doAction('login_before_form'); ?>
+
+            <form id="loginForm" method="post" action="" novalidate>
+
+                <div class="field">
+                    <label for="username">用户名 <span class="req">*</span></label>
+                    <div class="input-shell">
+                        <input type="text" id="username" name="username"
+                               placeholder="your-username"
+                               autocomplete="username" spellcheck="false"
+                               aria-describedby="usernameError" required>
+                    </div>
+                    <p class="field-error" id="usernameError" role="alert"></p>
+                </div>
+
+                <div class="field<?= $error ? ' has-error' : '' ?>" data-server-error="<?= e($error) ?>">
+                    <label for="password">密码 <span class="req">*</span></label>
+                    <div class="input-shell has-toggle">
+                        <input type="password" id="password" name="password"
+                               placeholder="••••••••"
+                               autocomplete="current-password"
+                               aria-describedby="passwordError" required>
+                        <button type="button" class="toggle-pw" id="togglePw"
+                                aria-label="显示密码" aria-pressed="false">SHOW</button>
+                    </div>
+                    <p class="caps-note" id="capsNote" hidden>Caps Lock 已开启</p>
+                    <p class="field-error" id="passwordError" role="alert"><?= e($error) ?></p>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <span class="spinner" aria-hidden="true"></span>
+                    <span class="btn-label"><?= e(__('login_btn', 'admin')) ?></span>
+                </button>
+            </form>
+
+            <?php LabPress_Hooks::doAction('login_after_form'); ?>
+
+            <div class="panel-foot">
+                <span>© <?= date('Y') ?> HUI-MY.LAB</span>
+                <span>v<?= e(LABPRESS_VERSION) ?></span>
+            </div>
+
+        </div>
+    </section>
+
+</main>
+
+<script src="assets/js/login.js"></script>
 </body>
 </html>

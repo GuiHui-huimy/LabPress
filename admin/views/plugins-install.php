@@ -64,7 +64,7 @@ $allPlugins = $pdo->query("SELECT * FROM plugins ORDER BY name")->fetchAll();
                         <td><?= __('plugin_php_version', 'admin') ?></td>
                         <td>
                             <span class="badge badge-<?= $phpVersionOk ? 'success' : 'danger' ?>">
-                                <?= PHP_VERSION ?> <?= $phpVersionOk ? '✅' : '❌ ' . __('plugin_php_required', 'admin') ?>
+                                <?= e(PHP_VERSION) ?> <?= $phpVersionOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i> ' . e(__('plugin_php_required', 'admin')) ?>
                             </span>
                         </td>
                     </tr>
@@ -72,7 +72,7 @@ $allPlugins = $pdo->query("SELECT * FROM plugins ORDER BY name")->fetchAll();
                         <td><?= __('plugin_zip_ext', 'admin') ?></td>
                         <td>
                             <span class="badge badge-<?= $zipOk ? 'success' : 'danger' ?>">
-                                <?= $zipOk ? __('plugin_zip_installed', 'admin') . ' ✅' : __('plugin_zip_not_installed', 'admin') . ' ❌' ?>
+                                <?= $zipOk ? e(__('plugin_zip_installed', 'admin')) . ' <i class="fas fa-check"></i>' : e(__('plugin_zip_not_installed', 'admin')) . ' <i class="fas fa-times"></i>' ?>
                             </span>
                         </td>
                     </tr>
@@ -80,7 +80,7 @@ $allPlugins = $pdo->query("SELECT * FROM plugins ORDER BY name")->fetchAll();
                         <td><?= __('plugin_dir_writable', 'admin') ?></td>
                         <td>
                             <span class="badge badge-<?= $pluginsWritable ? 'success' : 'danger' ?>">
-                                <?= $pluginsWritable ? __('plugin_dir_writable_yes', 'admin') . ' ✅' : __('plugin_dir_writable_no', 'admin') . ' ❌' ?>
+                                <?= $pluginsWritable ? e(__('plugin_dir_writable_yes', 'admin')) . ' <i class="fas fa-check"></i>' : e(__('plugin_dir_writable_no', 'admin')) . ' <i class="fas fa-times"></i>' ?>
                             </span>
                         </td>
                     </tr>

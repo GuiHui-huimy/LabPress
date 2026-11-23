@@ -39,8 +39,8 @@ $publications = getPublications();
     <?php endif; ?>
 </div>
 
-<div id="pubModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999;">
-    <div style="background:white; max-width:600px; margin:5% auto; padding:2rem; border-radius:8px;">
+<div id="pubModal" class="modal">
+    <div class="modal-content">
         <h3 id="pubModalTitle"><?= __('pub_add', 'admin') ?></h3>
         <form id="pubForm">
             <input type="hidden" name="id" value="">
@@ -81,3 +81,4 @@ window.__PUB_LANG = {
 };
 </script>
 <script src="assets/js/publications.js"></script>
+

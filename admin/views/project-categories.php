@@ -42,8 +42,8 @@ $categories = getCategories(); // 该函数已在 functions.php 中
 </div>
 
 <!-- 新增/编辑弹窗 -->
-<div id="catModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999;">
-    <div style="background:white; max-width:500px; margin:5% auto; padding:2rem; border-radius:8px;">
+<div id="catModal" class="modal">
+    <div class="modal-content">
         <h3 id="catModalTitle"><?= __('cat_add', 'admin') ?></h3>
         <form id="catForm">
             <input type="hidden" name="old_slug" value="">
@@ -80,3 +80,4 @@ window.__CAT_LANG = {
 };
 </script>
 <script src="assets/js/project-categories.js"></script>
+

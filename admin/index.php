@@ -82,6 +82,26 @@ foreach ($menu as $key => $item) {
 $allowedViews = array_values(array_unique(array_map('strval', $allowedViews)));
 $viewIsAllowed = in_array($view, $allowedViews, true);
 
+// 当前视图标题（顶栏面包屑 / 页面大标题）
+$viewTitle = '';
+foreach ($menu as $key => $item) {
+    if (!empty($item['children']) && is_array($item['children'])) {
+        foreach ($item['children'] as $childKey => $child) {
+            if (($child['view'] ?? $childKey) === $view) {
+                $viewTitle = $child['title'] ?? $childKey;
+                break 2;
+            }
+        }
+    } elseif ($key === $view) {
+        $viewTitle = $item['title'] ?? $key;
+        break;
+    }
+}
+if ($viewTitle === '') {
+    $viewTitle = $pluginPages[$view]['title'] ?? __('admin_panel', 'admin');
+}
+$currentUser = $_SESSION['user'] ?? '';
+
 ?>
 <!DOCTYPE html>
 <html <?= lp_html_lang_attr() ?>>
@@ -90,7 +110,10 @@ $viewIsAllowed = in_array($view, $allowedViews, true);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<?= e(lp_csrf_token()) ?>">
     <title><?= getFullTitle(__('admin_panel', 'admin')) ?></title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/vendor/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="assets/css/admin.css">
     <!-- EasyMDE 编辑器 -->
     <link rel="stylesheet" href="/admin/assets/css/easymde.min.css">
@@ -101,6 +124,37 @@ $viewIsAllowed = in_array($view, $allowedViews, true);
     <?php include 'includes/admin-header.php'; ?>
 
     <div class="admin-main">
+        <header class="admin-topbar">
+            <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="打开导航菜单">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="topbar-crumb">
+                <span class="dot-live" aria-hidden="true"></span>
+                <span>Console</span>
+                <span class="sep">/</span>
+                <span class="current"><?= e($viewTitle) ?></span>
+            </div>
+            <div class="topbar-meta">
+                <span id="adminClock">--:--:--</span>
+                <span class="sep hide-sm">/</span>
+                <span class="hide-sm">v<?= e(LABPRESS_VERSION) ?></span>
+                <span class="sep hide-sm">/</span>
+                <span class="user-chip"><i class="fas fa-user"></i><?= e($currentUser) ?></span>
+                <a class="topbar-link" href="/" target="_blank" rel="noopener">
+                    <i class="fas fa-external-link-alt"></i> 站点
+                </a>
+            </div>
+        </header>
+
+        <?php if ($view !== 'dashboard'): ?>
+        <section class="page-head">
+            <div>
+                <div class="eyebrow">LabPress Console</div>
+                <h1><?= e($viewTitle) ?></h1>
+            </div>
+        </section>
+        <?php endif; ?>
+
         <?php LabPress_Hooks::doAction('admin_before_page_content', $view); ?>
         <?php
         // 加载对应视图（白名单 + 插件页权限统一校验）
@@ -119,9 +173,11 @@ $viewIsAllowed = in_array($view, $allowedViews, true);
         }
         ?>
         <?php LabPress_Hooks::doAction('admin_after_page_content', $view); ?>
+
+        <?php include 'includes/admin-footer.php'; ?>
     </div>
 
-    <?php include 'includes/admin-footer.php'; ?>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <script src="assets/js/admin.js"></script>
 </body>
 </html>

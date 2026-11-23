@@ -14,8 +14,8 @@ if (!hasPermission('users')) {
     </div>
 </div>
 
-<div id="userModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999;">
-    <div style="background:white; max-width:500px; margin:5% auto; padding:2rem; border-radius:8px;">
+<div id="userModal" class="modal">
+    <div class="modal-content">
         <h3 id="userModalTitle"><?= e(__('user_add', 'admin')) ?></h3>
         <form id="userForm">
             <input type="hidden" name="username_old" value="">
@@ -120,3 +120,5 @@ window.__USER_LANG = {
 window.__CURRENT_USER = '<?= e($_SESSION['user']) ?>';
 </script>
 <script src="assets/js/users.js"></script>
+
+

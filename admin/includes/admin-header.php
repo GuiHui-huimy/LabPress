@@ -5,11 +5,27 @@ if (!isset($view)) $view = 'dashboard';
 
 // 读取站点名称
 $siteName = LabPress::config('site_name', 'HUI-MY.LAB');
+
+// 菜单图标（Font Awesome 5/6 通用名称）
+$lpMenuIcons = [
+    'dashboard'    => 'fa-tachometer-alt',
+    'publications' => 'fa-book',
+    'slides'       => 'fa-images',
+    'tools'        => 'fa-tools',
+    'projects'     => 'fa-project-diagram',
+    'news'         => 'fa-newspaper',
+    'users'        => 'fa-users',
+    'settings'     => 'fa-cog',
+    'plugins'      => 'fa-plug',
+];
 ?>
 <aside class="admin-sidebar">
     <div class="sidebar-brand">
-        <a href="/"><span>LAB-Press</span><br><?= htmlspecialchars($siteName) ?></a>
-        <small><?= __('admin_panel', 'admin') ?></small>
+        <a href="/">
+            <span class="brand-name">LAB<span class="brand-dot" aria-hidden="true"></span>PRESS</span>
+            <span class="brand-sub"><?= e($siteName) ?></span>
+        </a>
+        <small><?= e(__('admin_panel', 'admin')) ?></small>
     </div>
     <nav class="sidebar-nav">
         <?php foreach ($menu as $key => $item): ?>
@@ -31,13 +47,15 @@ $siteName = LabPress::config('site_name', 'HUI-MY.LAB');
                     }
                 }
             }
+            $icon = $lpMenuIcons[$key] ?? 'fa-circle-notch';
             ?>
             <?php if ($hasChildren): ?>
                 <!-- 父级菜单项（可折叠） -->
                 <div class="nav-item nav-parent <?= $isParentActive ? 'active' : '' ?>"
                      data-toggle="submenu"
                      data-target="submenu-<?= $key ?>">
-                    <?= $item['title'] ?>
+                    <i class="fas <?= $icon ?>"></i>
+                    <span><?= e($item['title']) ?></span>
                     <i class="fas fa-chevron-down submenu-arrow"></i>
                 </div>
                 <div class="submenu" id="submenu-<?= $key ?>" <?= $isParentActive ? 'style="display:block;"' : '' ?>>
@@ -48,19 +66,24 @@ $siteName = LabPress::config('site_name', 'HUI-MY.LAB');
                         $childView = $child['view'] ?? $childKey;
                         $activeClass = ($view === $childView) ? ' active' : '';
                         ?>
-                        <a href="?view=<?= $childView ?>" class="nav-item sub-item<?= $activeClass ?>">
-                            <?= $child['title'] ?>
+                        <a href="?view=<?= e($childView) ?>" class="nav-item sub-item<?= $activeClass ?>">
+                            <?= e($child['title']) ?>
                         </a>
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
                 <!-- 普通一级菜单项 -->
-                <a href="?view=<?= $key ?>" class="nav-item<?= ($view === $key) ? ' active' : '' ?>">
-                    <?= $item['title'] ?>
+                <a href="?view=<?= e($key) ?>" class="nav-item<?= ($view === $key) ? ' active' : '' ?>">
+                    <i class="fas <?= $icon ?>"></i>
+                    <span><?= e($item['title']) ?></span>
                 </a>
             <?php endif; ?>
         <?php endforeach; ?>
 
-        <a href="logout.php" class="nav-item logout-item"><?= __('logout', 'admin') ?></a>
+        <a href="logout.php" class="nav-item logout-item">
+            <i class="fas fa-sign-out-alt"></i>
+            <span><?= e(__('logout', 'admin')) ?></span>
+        </a>
     </nav>
+    <div class="sidebar-version">v<?= e(LABPRESS_VERSION) ?> · node-01</div>
 </aside>

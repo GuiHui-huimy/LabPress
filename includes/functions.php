@@ -3,6 +3,11 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/hooks.php';
 require_once __DIR__ . '/labpress.php';
 
+// 版本号（发布前由维护者更新；后台页脚与登录页展示用）
+if (!defined('LABPRESS_VERSION')) {
+    define('LABPRESS_VERSION', '1.1.1');
+}
+
 // ==================== 输出与请求助手（v1.1.1） ====================
 
 /**

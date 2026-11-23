@@ -7,6 +7,11 @@ if (!hasPermission('all')) {
 
 $db = LabPress::db();
 $languages = getAvailableLanguages();
+// 后台统一不使用国旗 emoji，语言名直接展示
+foreach ($languages as &$langRow) {
+    $langRow['flag'] = '';
+}
+unset($langRow);
 $sourceLocale = ml_get_source_locale();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

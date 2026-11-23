@@ -30,7 +30,7 @@ $statItems = json_decode($config['stat_items'] ?? '[]', true) ?: [];
                 <?php foreach (getAvailableLanguages() as $lang): ?>
                     <option value="<?= htmlspecialchars($lang['locale']) ?>" 
                         <?= ($config['language'] ?? 'zh_CN') === $lang['locale'] ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($lang['flag'] . ' ' . $lang['name']) ?>
+                        <?= htmlspecialchars($lang['name']) ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -62,7 +62,7 @@ $statItems = json_decode($config['stat_items'] ?? '[]', true) ?: [];
         <p class="text-muted" style="font-size:0.85rem;"><?= __('stat_items_desc', 'admin') ?></p>
         <div id="statItemsContainer">
             <?php foreach ($statItems as $idx => $item): ?>
-            <div class="stat-item-row" style="margin-bottom:1rem; border:1px solid #ddd; padding:1rem; border-radius:6px;">
+            <div class="stat-item-row" >
                 <div class="form-row">
                     <div class="form-group" style="flex:0.8;">
                         <label><?= __('stat_icon', 'admin') ?></label>
@@ -77,7 +77,7 @@ $statItems = json_decode($config['stat_items'] ?? '[]', true) ?: [];
                         <input type="text" name="stat_value[]" class="form-control" value="<?= htmlspecialchars($item['value'] ?? '') ?>" required>
                     </div>
                     <div class="form-group" style="display:flex; align-items:flex-end;">
-                        <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.stat-item-row').remove()">× <?= __('delete', 'admin') ?></button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.stat-item-row').remove()"><i class="fas fa-times"></i> <?= __('delete', 'admin') ?></button>
                     </div>
                 </div>
             </div>
@@ -100,7 +100,7 @@ $statItems = json_decode($config['stat_items'] ?? '[]', true) ?: [];
         <label><?= __('research_cards', 'admin') ?></label>
         <div id="researchCardsContainer">
             <?php foreach ($researchCards as $card): ?>
-            <div class="research-card-row" style="margin-bottom:1rem; border:1px solid #ddd; padding:1rem; border-radius:6px;">
+            <div class="research-card-row" >
                 <div class="form-row">
                     <div class="form-group">
                         <label><?= __('stat_icon', 'admin') ?></label>
@@ -115,7 +115,7 @@ $statItems = json_decode($config['stat_items'] ?? '[]', true) ?: [];
                         <textarea name="research_card_desc[]" class="form-control" rows="2"><?= htmlspecialchars($card['desc'] ?? '') ?></textarea>
                     </div>
                     <div class="form-group" style="display:flex; align-items:flex-end;">
-                        <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.research-card-row').remove()">× <?= __('delete', 'admin') ?></button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.research-card-row').remove()"><i class="fas fa-times"></i> <?= __('delete', 'admin') ?></button>
                     </div>
                 </div>
             </div>
@@ -144,3 +144,6 @@ window.__SITE_CONFIG_LANG = {
 };
 </script>
 <script src="assets/js/site-config.js"></script>
+
+
+

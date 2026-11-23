@@ -47,7 +47,7 @@ $categories = getCategories();
                 <tr>
                     <td>
                         <?php if (!empty($proj['image'])): ?>
-                            <img src="/<?= htmlspecialchars($proj['image']) ?>" style="max-width:60px; border-radius:4px;">
+                            <img src="/<?= htmlspecialchars($proj['image']) ?>" style="max-width:60px;">
                         <?php else: ?>
                             -
                         <?php endif; ?>
@@ -103,8 +103,8 @@ $categories = getCategories();
 </div>
 
 <!-- 新增/编辑弹窗 -->
-<div id="projectModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999;">
-    <div style="background:white; max-width:700px; margin:5% auto; padding:2rem; border-radius:8px; max-height:80vh; overflow-y:auto;">
+<div id="projectModal" class="modal">
+    <div class="modal-content wide">
         <h3 id="projectModalTitle"><?= __('project_add', 'admin') ?></h3>
         <form id="projectForm">
             <input type="hidden" name="id" value="">
@@ -189,3 +189,4 @@ window.__PROJECT_LANG = {
 };
 </script>
 <script src="assets/js/project-manage.js"></script>
+

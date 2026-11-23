@@ -17,8 +17,8 @@ $tools = getTools();
 </div>
 
 <!-- 新增/编辑版本模态窗口 -->
-<div id="versionModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; overflow-y:auto;">
-    <div style="background:white; max-width:700px; margin:3% auto; padding:2rem; border-radius:8px;">
+<div id="versionModal" class="modal">
+    <div class="modal-content wide">
         <h3 id="versionModalTitle"><?= __('version_add', 'admin') ?></h3>
         <form id="versionForm">
             <input type="hidden" name="id" value="">
@@ -74,3 +74,4 @@ window.__VERSION_LANG = {
 };
 </script>
 <script src="assets/js/tool-versions.js"></script>
+
