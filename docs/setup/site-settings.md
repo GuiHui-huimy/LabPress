@@ -223,7 +223,7 @@ The site configuration system is integrated with the LabPress hook system. Plugi
 
 The most relevant hook is the `translate` filter, which allows the Dynamic Multi-Language plugin to replace database-stored strings with translated versions. For example, the `about_us`, `research_title`, and `research_subtitle` values can be translated through this filter.
 
-Additional generic hooks are triggered during the save process. The `admin_prepare_site-config` filter can be used to modify the data before it is saved, and the `admin_after_site-config_save` action is triggered after a successful save. These hooks are described further in the [Hooks Reference](../plugins/hooks-reference.md).
+Additional generic hooks are triggered during the save process. The `admin_prepare_site-config` filter can be used to modify the data before it is saved, and the `admin_after_site-config_save` action is triggered after a successful save. These hooks are described further in the [Hooks Reference](../plugins-dev/hooks-reference.md).
 
 ## 7. Next Steps
 

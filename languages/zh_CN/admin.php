@@ -328,6 +328,17 @@ return [
     'plugin_uninstall_success' => '卸载成功',
     'plugin_uninstall_fail' => '卸载失败',
     'network_error' => '网络错误',
+    // 用户与密码（v1.1.1 补齐英文包已有的键）
+    'change_password' => '修改密码',
+    'change_my_password' => '修改我的密码',
+    'change_user_password' => '修改其他用户密码',
+    'new_password' => '新密码',
+    'confirm_password' => '确认密码',
+    'update' => '更新',
+    'select_user' => '选择用户',
+    'choose_user' => '请选择用户',
+    'password_mismatch' => '两次输入的密码不一致',
+    'password_changed' => '密码修改成功',
     // 侧边栏
     'admin_panel' => '管理后台',
 ];

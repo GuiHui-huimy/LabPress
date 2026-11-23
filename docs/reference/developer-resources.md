@@ -196,7 +196,7 @@ Static methods:
 - `addFilter($hook, $callback, $priority = 10)`
 - `applyFilters($hook, $value, ...$args)`
 
-The complete hook list is documented in [Hooks Reference](../plugins/hooks-reference.md).
+The complete hook list is documented in [Hooks Reference](../plugins-dev/hooks-reference.md).
 
 ### 5.3 `LabPress` Static Utility Class
 
@@ -318,9 +318,9 @@ For security vulnerabilities, follow the process described in `SECURITY.md`. Do 
 
 After reviewing the developer resources, you may want to continue with:
 
-- [Plugin Development](../plugins/intro.md) – understand how to extend LabPress.
-- [Hooks Reference](../plugins/hooks-reference.md) – look up available actions and filters.
+- [Plugin Development](../plugins-dev/intro.md) – understand how to extend LabPress.
+- [Hooks Reference](../plugins-dev/hooks-reference.md) – look up available actions and filters.
 - [API Reference](api.md) – explore the data endpoints.
 - [Database Schema](database.md) – understand the underlying data structure.
 - [Core Language Packs](../i18n/core-lang.md) – learn how to add or modify language files.
-- [Plugin Examples](../plugins/examples.md) – study real-world plugin implementations.
+- [Plugin Examples](../plugins-dev/examples.md) – study real-world plugin implementations.

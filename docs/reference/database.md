@@ -406,7 +406,7 @@ All other tables are independent or linked only by application-level logic rathe
 After reviewing the database schema, you may want to continue with:
 
 - [API Reference](api.md) – understand how the database is accessed through API endpoints.
-- [Plugin Development](../plugins/intro.md) – learn how to create tables and interact with the database.
+- [Plugin Development](../plugins-dev/intro.md) – learn how to create tables and interact with the database.
 - [Dynamic Multi-Language Plugin](../i18n/dynamic-multilang.md) – understand how the `ml_translations` table is used.
 - [Site Settings](../setup/site-settings.md) – see how `site_config` keys are managed from the admin panel.
 - [Content Management](../content/publications.md) – operational guides for each content type.

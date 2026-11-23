@@ -8,7 +8,10 @@ if (!isset($_SESSION['user'])) {
     exit;
 }
 
-$view = $_GET['view'] ?? 'dashboard';
+$view = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)($_GET['view'] ?? 'dashboard'));
+if ($view === '') {
+    $view = 'dashboard';
+}
 
 // 可访问视图及对应的权限（用于侧边栏菜单判断）
 $menu = [
@@ -65,12 +68,27 @@ foreach ($pluginPages as $slug => $page) {
 // 允许插件修改整个后台菜单
 $menu = LabPress_Hooks::applyFilters('admin_menu', $menu);
 
+// 视图白名单：只允许菜单声明过的视图，防止任意文件包含
+$allowedViews = [];
+foreach ($menu as $key => $item) {
+    if (!empty($item['children']) && is_array($item['children'])) {
+        foreach ($item['children'] as $childKey => $child) {
+            $allowedViews[] = $child['view'] ?? $childKey;
+        }
+    } else {
+        $allowedViews[] = $key;
+    }
+}
+$allowedViews = array_values(array_unique(array_map('strval', $allowedViews)));
+$viewIsAllowed = in_array($view, $allowedViews, true);
+
 ?>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html <?= lp_html_lang_attr() ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= e(lp_csrf_token()) ?>">
     <title><?= getFullTitle(__('admin_panel', 'admin')) ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="assets/css/admin.css">
@@ -85,15 +103,19 @@ $menu = LabPress_Hooks::applyFilters('admin_menu', $menu);
     <div class="admin-main">
         <?php LabPress_Hooks::doAction('admin_before_page_content', $view); ?>
         <?php
-        // 加载对应视图
+        // 加载对应视图（白名单 + 插件页权限统一校验）
         $viewFile = 'views/' . $view . '.php';
-        if (file_exists($viewFile)) {
+        if ($viewIsAllowed && file_exists($viewFile)) {
             include $viewFile;
-        } elseif (isset($pluginPages[$view])) {
-            // 插件注册的页面，执行回调
-            call_user_func($pluginPages[$view]['callback']);
+        } elseif ($viewIsAllowed && isset($pluginPages[$view])) {
+            $pagePerm = $pluginPages[$view]['permission'] ?? 'all';
+            if (!hasPermission($pagePerm)) {
+                echo '<div class="card"><p>' . e(__('no_permission', 'admin')) . '</p></div>';
+            } else {
+                call_user_func($pluginPages[$view]['callback']);
+            }
         } else {
-            echo '<p class="p-4">' . __('page_not_found', 'admin') . '</p>';
+            echo '<p class="p-4">' . e(__('page_not_found', 'admin')) . '</p>';
         }
         ?>
         <?php LabPress_Hooks::doAction('admin_after_page_content', $view); ?>

@@ -71,8 +71,9 @@ try {
             $data = ['error' => '无效请求类型'];
     }
 } catch (Exception $e) {
+    error_log('[LabPress] data.php failed: ' . $e->getMessage());
     http_response_code(500);
-    $data = ['error' => $e->getMessage()];
+    $data = ['error' => 'Internal error'];
 }
 
 ob_start();

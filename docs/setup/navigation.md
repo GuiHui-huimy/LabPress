@@ -206,7 +206,7 @@ The navigation menu system exposes several hooks that allow plugins to modify be
 
 Plugin developers can use these hooks to add custom menu classes, insert additional menu items, or modify the menu data before it is stored.
 
-For a complete reference of available hooks, see [Hooks Reference](../plugins/hooks-reference.md).
+For a complete reference of available hooks, see [Hooks Reference](../plugins-dev/hooks-reference.md).
 
 ## 9. Example: Adding an External Link
 
@@ -232,4 +232,4 @@ After configuring the navigation menus, you may want to continue with:
 - [Site Settings](site-settings.md) – manage general site identity and homepage content.
 - [Content Management](../content/publications.md) – create publications, slides, tools, projects, and news.
 - [Internationalization](../i18n/overview.md) – manage multilingual support for menus and content.
-- [Hooks Reference](../plugins/hooks-reference.md) – learn about available hooks for menu customization.
+- [Hooks Reference](../plugins-dev/hooks-reference.md) – learn about available hooks for menu customization.

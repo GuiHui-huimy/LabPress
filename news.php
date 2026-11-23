@@ -4,7 +4,7 @@ require_once 'includes/functions.php';
 $newsList = getNews();
 ?>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html <?= lp_html_lang_attr() ?>>
 <head>
     <meta name="referrer" content="no-referrer">
     <meta charset="UTF-8">

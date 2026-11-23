@@ -306,6 +306,6 @@ These functions form the foundation of the static translation system and are use
 After understanding the core language pack system, continue with:
 
 - [Dynamic Multi-Language Plugin](dynamic-multilang.md) – learn how database-stored content is translated.
-- [Plugin Development](../plugins/intro.md) – understand how plugins can provide their own language files.
-- [Hooks Reference](../plugins/hooks-reference.md) – see the complete list of available hooks.
-- [Plugin Examples](../plugins/examples.md) – view working examples of plugins that use the translation system.
+- [Plugin Development](../plugins-dev/intro.md) – understand how plugins can provide their own language files.
+- [Hooks Reference](../plugins-dev/hooks-reference.md) – see the complete list of available hooks.
+- [Plugin Examples](../plugins-dev/examples.md) – view working examples of plugins that use the translation system.

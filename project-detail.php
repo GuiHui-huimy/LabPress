@@ -6,7 +6,7 @@ $id = (int)($_GET['id'] ?? 0);
 $project = getProjectById($id);
 if (!$project) {
     header("HTTP/1.0 404 Not Found");
-    echo '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>' . __('project_not_found', 'projects') . '</title></head><body><p style="text-align:center;margin-top:4rem;">' . __('project_not_found', 'projects') . '</p></body></html>';
+    echo '<!DOCTYPE html><html <?= lp_html_lang_attr() ?>><head><meta charset="UTF-8"><title>' . __('project_not_found', 'projects') . '</title></head><body><p style="text-align:center;margin-top:4rem;">' . __('project_not_found', 'projects') . '</p></body></html>';
     exit;
 }
 
@@ -36,7 +36,7 @@ $ext       = htmlspecialchars($project['external_url'] ?? '');
 $catUrl    = 'projects.php?category=' . urlencode($project['category_slug']);
 ?>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html <?= lp_html_lang_attr() ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">

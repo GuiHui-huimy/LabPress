@@ -1,7 +1,267 @@
 <?php
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/hooks.php';
-require_once __DIR__ . '/labpress.php';  
+require_once __DIR__ . '/labpress.php';
+
+// ==================== 输出与请求助手（v1.1.1） ====================
+
+/**
+ * HTML 转义输出助手
+ */
+function e($value) {
+    return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+/**
+ * 会话 Cookie 加固：config.php 负责 session_start，这里补 HttpOnly / SameSite
+ */
+function lp_harden_session_cookie() {
+    if (session_status() !== PHP_SESSION_ACTIVE || headers_sent() || session_id() === '') {
+        return;
+    }
+    setcookie(session_name(), session_id(), [
+        'expires'  => 0,
+        'path'     => '/',
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+}
+
+lp_harden_session_cookie();
+
+/**
+ * 生成 <html> 标签的 lang / dir 属性（跟随当前 locale）
+ */
+function lp_html_lang_attr() {
+    $locale = getLocale();
+    $lang = str_replace('_', '-', $locale);
+    $dir = 'ltr';
+    foreach (getAvailableLanguages() as $item) {
+        if (($item['locale'] ?? '') === $locale && !empty($item['direction'])) {
+            $dir = $item['direction'];
+            break;
+        }
+    }
+    return 'lang="' . e($lang) . '" dir="' . e($dir) . '"';
+}
+
+/**
+ * 在当前 URL 上合并查询参数（保留 id / category / page 等）
+ */
+function lp_url_with_params(array $overrides = []) {
+    $uri = $_SERVER['REQUEST_URI'] ?? '/';
+    $path = strtok($uri, '?');
+    if ($path === false || $path === '') {
+        $path = '/';
+    }
+    $query = [];
+    $qs = parse_url($uri, PHP_URL_QUERY);
+    if ($qs) {
+        parse_str($qs, $query);
+    }
+    foreach ($overrides as $key => $value) {
+        if ($value === null) {
+            unset($query[$key]);
+        } else {
+            $query[$key] = $value;
+        }
+    }
+    $qs = http_build_query($query);
+    return $path . ($qs !== '' ? '?' . $qs : '');
+}
+
+/**
+ * 语言切换 URL：保留当前路径与查询串，只替换 lang
+ */
+function lp_url_for_lang($locale) {
+    return lp_url_with_params(['lang' => $locale]);
+}
+
+/**
+ * 是否为写请求
+ */
+function lp_is_write_request() {
+    return in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['POST', 'PUT', 'DELETE', 'PATCH'], true);
+}
+
+/**
+ * 判断请求是否来自同源（Origin / Referer 任一存在则必须匹配）
+ */
+function lp_request_is_same_origin() {
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    if ($host === '') {
+        return true;
+    }
+    $hostNoPort = preg_replace('/:\d+$/', '', $host);
+    foreach (['HTTP_ORIGIN', 'HTTP_REFERER'] as $key) {
+        if (empty($_SERVER[$key])) {
+            continue;
+        }
+        $originHost = parse_url($_SERVER[$key], PHP_URL_HOST);
+        if (!$originHost) {
+            continue;
+        }
+        if (strcasecmp($originHost, $hostNoPort) !== 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * 当前会话的 CSRF token
+ */
+function lp_csrf_token() {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * 校验 CSRF token
+ */
+function lp_csrf_verify($token) {
+    return is_string($token)
+        && !empty($_SESSION['csrf_token'])
+        && hash_equals($_SESSION['csrf_token'], $token);
+}
+
+/**
+ * 写操作守卫：带 token 则必须匹配；不带 token 则必须同源。
+ * 校验失败直接输出 403 并终止请求。
+ */
+function lp_guard_write_request() {
+    if (!lp_is_write_request()) {
+        return true;
+    }
+    $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_POST['_csrf'] ?? null);
+    if ($token !== null) {
+        if (lp_csrf_verify($token)) {
+            return true;
+        }
+        http_response_code(403);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'error' => 'Invalid CSRF token']);
+        exit;
+    }
+    if (!lp_request_is_same_origin()) {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'error' => 'Invalid request origin']);
+        exit;
+    }
+    return true;
+}
+
+/**
+ * 递归删除目录（供插件安装失败时回滚使用）
+ */
+function lp_remove_dir($dir) {
+    if (!is_dir($dir)) {
+        return;
+    }
+    $items = scandir($dir);
+    foreach ($items as $item) {
+        if ($item === '.' || $item === '..') {
+            continue;
+        }
+        $path = $dir . DIRECTORY_SEPARATOR . $item;
+        if (is_dir($path)) {
+            lp_remove_dir($path);
+        } else {
+            unlink($path);
+        }
+    }
+    rmdir($dir);
+}
+
+/**
+ * 安全解压并安装插件 ZIP（v1.1.1 应急校验版）
+ * 返回 ['success' => bool, 'error' => string, 'slug' => string, 'plugin_info' => array]
+ */
+function lp_install_plugin_zip($zipPath) {
+    $pluginsDir = realpath(__DIR__ . '/../plugins');
+    if ($pluginsDir === false) {
+        return ['success' => false, 'error' => '插件目录不可用'];
+    }
+
+    $zip = new ZipArchive();
+    if ($zip->open($zipPath) !== true) {
+        return ['success' => false, 'error' => '无法打开 ZIP 文件'];
+    }
+
+    if ($zip->numFiles > 2000) {
+        $zip->close();
+        return ['success' => false, 'error' => '压缩包条目过多'];
+    }
+
+    $root = null;
+    $totalSize = 0;
+    for ($i = 0; $i < $zip->numFiles; $i++) {
+        $name = $zip->getNameIndex($i);
+        if ($name === false) {
+            continue;
+        }
+        $norm = ltrim(str_replace('\\', '/', $name), '/');
+        if (preg_match('#(^|/)\.\.(/|$)#', $norm) || preg_match('#^[A-Za-z]:#', $norm)) {
+            $zip->close();
+            return ['success' => false, 'error' => '压缩包包含非法路径'];
+        }
+        $parts = explode('/', $norm);
+        if ($root === null) {
+            $root = $parts[0];
+        }
+        if ($parts[0] !== $root) {
+            $zip->close();
+            return ['success' => false, 'error' => '压缩包必须只包含一个根目录'];
+        }
+        $stat = $zip->statIndex($i);
+        $totalSize += (int)($stat['size'] ?? 0);
+        if ($totalSize > 50 * 1024 * 1024) {
+            $zip->close();
+            return ['success' => false, 'error' => '压缩包解压后体积超过限制'];
+        }
+    }
+
+    if (!$root || !preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/', $root)) {
+        $zip->close();
+        return ['success' => false, 'error' => '插件根目录名不合法'];
+    }
+
+    $targetDir = $pluginsDir . DIRECTORY_SEPARATOR . $root;
+    if (file_exists($targetDir)) {
+        $zip->close();
+        return ['success' => false, 'error' => '插件目录已存在，请先删除再安装'];
+    }
+
+    if (!$zip->extractTo($pluginsDir)) {
+        $zip->close();
+        return ['success' => false, 'error' => '解压失败'];
+    }
+    $zip->close();
+
+    $pluginFile = $targetDir . '/plugin.php';
+    if (!file_exists($pluginFile)) {
+        lp_remove_dir($targetDir);
+        return ['success' => false, 'error' => '压缩包中未找到 plugin.php 文件'];
+    }
+
+    $pluginInfo = [
+        'slug' => $root,
+        'name' => $root,
+        'description' => '',
+        'version' => '',
+        'author' => '',
+    ];
+    $content = (string)file_get_contents($pluginFile);
+    if (preg_match('/Plugin Name:\s*(.+)/i', $content, $m)) $pluginInfo['name'] = trim($m[1]);
+    if (preg_match('/Description:\s*(.+)/i', $content, $m)) $pluginInfo['description'] = trim($m[1]);
+    if (preg_match('/Version:\s*(.+)/i', $content, $m)) $pluginInfo['version'] = trim($m[1]);
+    if (preg_match('/Author:\s*(.+)/i', $content, $m)) $pluginInfo['author'] = trim($m[1]);
+
+    return ['success' => true, 'slug' => $root, 'plugin_info' => $pluginInfo];
+}
 
 /**
  * 获取所有轮播图（按 sort_order 排序）
@@ -317,7 +577,12 @@ function getLocale() {
         // 前台逻辑：URL参数 > Cookie > 系统配置
         if (!empty($_GET['lang']) && in_array($_GET['lang'], $availLocales)) {
             $locale = $_GET['lang'];
-            setcookie('lang', $locale, time() + 86400 * 30, '/');
+            setcookie('lang', $locale, [
+                'expires'  => time() + 86400 * 30,
+                'path'     => '/',
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
             return $locale;
         }
         if (!empty($_COOKIE['lang']) && in_array($_COOKIE['lang'], $availLocales)) {
@@ -366,7 +631,6 @@ function __($key, $module = 'common') {
         $pluginSlug = substr($module, 7);
         $pluginSlug = preg_replace('/[^a-zA-Z0-9_-]/', '', $pluginSlug);
         $pluginLangFile = __DIR__ . "/../plugins/{$pluginSlug}/languages/{$locale}.php";
-        echo '<!-- Transition Info: Looking for plugin language file ' . htmlspecialchars($pluginLangFile) . ' -->';
         if (file_exists($pluginLangFile)) {
             $pluginLang = include $pluginLangFile;
             // 直接在当前调用中查找该插件语言包，避免污染全局 $lang
@@ -379,8 +643,10 @@ function __($key, $module = 'common') {
             }
             return LabPress_Hooks::applyFilters('translate', $value, $key, $locale, $module);
         }
-        // 如果插件语言文件不存在，回退到键名
-        echo '<!-- Transition Warning: Plugin language file not found for ' . htmlspecialchars($pluginSlug) . ' in locale ' . htmlspecialchars($locale) . ' -->';
+        // 如果插件语言文件不存在，回退到键名（不做任何输出，调试信息写入全局变量供开发面板读取）
+        if (defined('LABPRESS_DEBUG') && LABPRESS_DEBUG) {
+            $GLOBALS['lp_i18n_missing'][] = $pluginLangFile;
+        }
         return LabPress_Hooks::applyFilters('translate', $key, $key, $locale, $module);
     }
 
@@ -456,6 +722,11 @@ function isUsingDefaultPassword($username) {
 //=================================================
 //在此处上方修改
 //=================================================
+// 提前解析语言，保证 ?lang= 的 Cookie 在任何 HTML 输出之前写入
+if (isset($_GET['lang'])) {
+    getLocale();
+}
+
 // 初始化插件系统
 loadPlugins();
 LabPress_Hooks::doAction('init');

@@ -273,6 +273,6 @@ See the `LICENSE` file for the full license text.
 After reading this guide, you may want to:
 
 - Review the [Developer Resources](developer-resources.md) chapter for more detailed technical context.
-- Read the [Plugin Development](../plugins/intro.md) section if you plan to build a plugin.
-- Check the [Hooks Reference](../plugins/hooks-reference.md) before adding new hook-related functionality.
+- Read the [Plugin Development](../plugins-dev/intro.md) section if you plan to build a plugin.
+- Check the [Hooks Reference](../plugins-dev/hooks-reference.md) before adding new hook-related functionality.
 - Explore the [API Reference](api.md) and [Database Schema](database.md) for technical details.

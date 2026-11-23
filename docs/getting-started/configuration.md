@@ -118,7 +118,7 @@ Active plugins are loaded once during initialization through `loadPlugins()`. Ea
 
 Plugin language files are loaded from the plugin’s `languages/` directory. The core can load plugin translations automatically into the global translation array, or plugins can request explicit loading by calling `__('key', 'plugin:plugin-slug')`.
 
-Detailed plugin development and management are covered in [Plugin Management](../setup/plugins.md) and [Plugin Development](../plugins/intro.md).
+Detailed plugin development and management are covered in [Plugin Management](../setup/plugins.md) and [Plugin Development](../plugins-dev/intro.md).
 
 ## 7. Internationalization Framework
 
@@ -155,4 +155,4 @@ After reviewing the configuration layers described here, you can proceed to the 
 - [Plugin Management](../setup/plugins.md) – plugin installation, activation, and lifecycle.
 - [Content Management](../content/publications.md) – working with publications, slides, tools, projects, and news.
 - [Internationalization](../i18n/overview.md) – in-depth discussion of language packs and dynamic translations.
-- [Plugin Development](../plugins/intro.md) – how to build custom plugins and use the hook system.
+- [Plugin Development](../plugins-dev/intro.md) – how to build custom plugins and use the hook system.

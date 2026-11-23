@@ -1,10 +1,10 @@
 <?php
-session_start();
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
 require_once '../includes/hooks.php';   // 确保钩子可用
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
+lp_guard_write_request();
 
 if (!isset($_SESSION['user'])) {
     http_response_code(403);

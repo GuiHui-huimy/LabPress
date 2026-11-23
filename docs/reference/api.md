@@ -555,6 +555,6 @@ Success response:
 After reviewing the API reference, you may want to continue with:
 
 - [Database Schema](database.md) – understand the underlying data structure.
-- [Plugin Development](../plugins/intro.md) – learn how to use these APIs in your own plugins.
-- [Hooks Reference](../plugins/hooks-reference.md) – see how hooks interact with the data layer.
+- [Plugin Development](../plugins-dev/intro.md) – learn how to use these APIs in your own plugins.
+- [Hooks Reference](../plugins-dev/hooks-reference.md) – see how hooks interact with the data layer.
 - [Content Management](../content/publications.md) – operational guides for each content type.

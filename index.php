@@ -24,7 +24,7 @@ foreach ($categories as $c) {
 
 
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html <?= lp_html_lang_attr() ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -97,7 +97,7 @@ foreach ($categories as $c) {
                                 </div>
                             <?php endif; ?>
                             <div class="stat-number"><?= htmlspecialchars($statValue) ?></div>
-                            <div class="stat-label"><?= __($stat['label'], 'index') ?: htmlspecialchars($stat['label']) ?></div>
+                            <div class="stat-label"><?= e(__($stat['label'] ?? '', 'index')) ?></div>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -111,14 +111,25 @@ foreach ($categories as $c) {
     <section class="section bg-light">
         <div class="container">
             <div class="research-image"></div>
-            <h2 class="section-title"><?= __('research_heading', 'index') ?: htmlspecialchars($researchTitle) ?></h2>
-            <p class="section-subtitle"><?= __('research_subheading', 'index') ?: htmlspecialchars($researchSubtitle) ?></p>
+            <?php
+            // 语言键缺失时回退到站点配置里的原文（避免直接输出键名）
+            $headingText = __('research_heading', 'index');
+            if ($headingText === 'research_heading') {
+                $headingText = $researchTitle;
+            }
+            $subheadingText = __('research_subheading', 'index');
+            if ($subheadingText === 'research_subheading') {
+                $subheadingText = $researchSubtitle;
+            }
+            ?>
+            <h2 class="section-title"><?= e($headingText) ?></h2>
+            <p class="section-subtitle"><?= e($subheadingText) ?></p>
             <div class="research-grid">
                 <?php foreach ($researchCards as $card): ?>
                     <div class="research-card">
                         <div class="research-icon"><i class="fas fa-<?= htmlspecialchars($card['icon'] ?? 'flask') ?>"></i></div>
-                        <h3><?= __($card['title'] ?? '', 'index') ?: htmlspecialchars($card['title'] ?? '') ?></h3>
-                        <p><?= __($card['desc'] ?? '', 'index') ?: htmlspecialchars($card['desc'] ?? '') ?></p>
+                        <h3><?= e(__($card['title'] ?? '', 'index')) ?></h3>
+                        <p><?= e(__($card['desc'] ?? '', 'index')) ?></p>
                     </div>
                 <?php endforeach; ?>
             </div>

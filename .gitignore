@@ -13,8 +13,16 @@ vendor/
 # -----------------------------------------------------------------------------
 *.sql
 !labpressexample.sql
+!sql/upgrade-*.sql
 
 
+
+# -----------------------------------------------------------------------------
+# Runtime uploads / built docs site (existing demo images stay tracked)
+# New files in these directories are local to each deployment.
+# -----------------------------------------------------------------------------
+/uploads/*
+/site/
 
 # -----------------------------------------------------------------------------
 # Plugin debug logs

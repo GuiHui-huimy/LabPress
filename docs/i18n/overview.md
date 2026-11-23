@@ -245,5 +245,5 @@ This overview introduced the components and architecture of the LabPress interna
 
 - [Core Language Packs](core-lang.md) – details about language file structure and the `__()` function.
 - [Dynamic Multi-Language Plugin](dynamic-multilang.md) – instructions for managing database content translations.
-- [Plugin Development](../plugins/intro.md) – how to create plugins with their own language support.
-- [Hooks Reference](../plugins/hooks-reference.md) – complete list of available filters and actions.
+- [Plugin Development](../plugins-dev/intro.md) – how to create plugins with their own language support.
+- [Hooks Reference](../plugins-dev/hooks-reference.md) – complete list of available filters and actions.

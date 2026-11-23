@@ -6,7 +6,7 @@ $id = (int)($_GET['id'] ?? 0);
 $news = getNewsById($id);
 if (!$news) {
     header("HTTP/1.0 404 Not Found");
-    echo '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>' . __('not_found_title', 'news') . '</title></head><body><p style="text-align:center;margin-top:4rem;">' . __('not_found_text', 'news') . '</p></body></html>';
+    echo '<!DOCTYPE html><html <?= lp_html_lang_attr() ?>><head><meta charset="UTF-8"><title>' . __('not_found_title', 'news') . '</title></head><body><p style="text-align:center;margin-top:4rem;">' . __('not_found_text', 'news') . '</p></body></html>';
     exit;
 }
 
@@ -22,7 +22,7 @@ $author     = htmlspecialchars($news['author'] ?? __('author_default', 'news'));
 $date       = date(__('date_format', 'news'), strtotime($news['date']));
 ?>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html <?= lp_html_lang_attr() ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">

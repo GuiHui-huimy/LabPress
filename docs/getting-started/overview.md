@@ -47,7 +47,7 @@ The **plugin system** is the backbone of extensibility. It provides:
 - **Filters** (`addFilter`, `applyFilters`) – for modifying data (e.g., `translate`, `nav_menu_item`, `slides_data`).
 - **Plugin Lifecycle Hooks** – `plugin_activation`, `plugin_deactivation`, and `plugin_uninstalled` are triggered during activation, deactivation, and uninstallation respectively.
 
-For a complete list of all available actions and filters, refer to the **[Hooks Reference](../plugins/hooks-reference.md)**.
+For a complete list of all available actions and filters, refer to the **[Hooks Reference](../plugins-dev/hooks-reference.md)**.
 
 A plugin is simply a folder inside `/plugins/` containing a `plugin.php` file with a standardized header comment. The admin panel scans this directory, manages activation states, and supports ZIP upload for installation.
 
@@ -263,4 +263,4 @@ Every page aims to be technically precise, providing code examples, database sch
 
 ## Next Steps
 
-Begin your journey with the [Installation Guide](installation.md) to get LabPress running on your server, or jump directly to the [Plugin Development Introduction](../plugins/intro.md) if you are eager to write your first extension.
+Begin your journey with the [Installation Guide](installation.md) to get LabPress running on your server, or jump directly to the [Plugin Development Introduction](../plugins-dev/intro.md) if you are eager to write your first extension.

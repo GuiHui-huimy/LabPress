@@ -1,5 +1,4 @@
 <?php
-session_start();
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
 if (!hasPermission('users')) {
@@ -8,9 +7,10 @@ if (!hasPermission('users')) {
     exit;
 }
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
+lp_guard_write_request();
 $method = $_SERVER['REQUEST_METHOD'];
-$input = json_decode(file_get_contents('php://input'), true);
+$input = json_decode(file_get_contents('php://input'), true) ?: [];
 
 switch ($method) {
     case 'GET':
@@ -19,11 +19,27 @@ switch ($method) {
         break;
 
     case 'POST':
-        $username = $input['username'];
-        $password = $input['password'];
+        // 新建账号属于管理员操作
+        if (!hasPermission('all')) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => '仅管理员可新建账号']);
+            exit;
+        }
+        $username = trim((string)($input['username'] ?? ''));
+        $password = (string)($input['password'] ?? '');
         $permissions = $input['permissions'] ?? [];
-        if (empty($username) || empty($password)) {
+        if ($username === '' || $password === '') {
             echo json_encode(['success' => false, 'error' => '用户名和密码不能为空']);
+            exit;
+        }
+        if (!preg_match('/^[A-Za-z0-9_\-\.]{3,32}$/', $username)) {
+            echo json_encode(['success' => false, 'error' => '用户名格式不合法（3-32 位字母、数字、下划线）']);
+            exit;
+        }
+        $exists = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
+        $exists->execute([$username]);
+        if ((int)$exists->fetchColumn() > 0) {
+            echo json_encode(['success' => false, 'error' => '用户名已存在']);
             exit;
         }
         $hash = password_hash($password, PASSWORD_BCRYPT);
@@ -85,9 +101,19 @@ switch ($method) {
         break;
 
     case 'DELETE':
-        $username = $input['username'];
-        if (empty($username)) {
+        // 删除账号只能由管理员执行，且不能删除自己
+        if (!hasPermission('all')) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => '仅管理员可删除账号']);
+            exit;
+        }
+        $username = (string)($input['username'] ?? '');
+        if ($username === '') {
             echo json_encode(['success' => false, 'error' => '缺少用户名']);
+            exit;
+        }
+        if (isset($_SESSION['user']) && $_SESSION['user'] === $username) {
+            echo json_encode(['success' => false, 'error' => '不能删除当前登录账号']);
             exit;
         }
         $stmt = $pdo->prepare("DELETE FROM users WHERE username = ?");

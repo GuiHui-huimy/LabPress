@@ -2,7 +2,7 @@
 
 This chapter describes the plugin management interface in the LabPress administration panel. It explains how plugins are stored, discovered, activated, deactivated, installed, and uninstalled, as well as how the plugin lifecycle is integrated with the LabPress hook system.
 
-The chapter is intended for site administrators who need to manage the functionality of a LabPress site. For information on developing new plugins, refer to the [Plugin Development](../plugins/intro.md) section.
+The chapter is intended for site administrators who need to manage the functionality of a LabPress site. For information on developing new plugins, refer to the [Plugin Development](../plugins-dev/intro.md) section.
 
 ## 1. Overview
 
@@ -248,7 +248,7 @@ The plugin system uses the `LabPress_Hooks` class to trigger events during the p
 
 Plugin developers can use these hooks to perform custom setup and cleanup tasks. For example, a plugin can create a database table when activated and drop it when uninstalled.
 
-A full reference of all hooks is available in the [Hooks Reference](../plugins/hooks-reference.md) chapter.
+A full reference of all hooks is available in the [Hooks Reference](../plugins-dev/hooks-reference.md) chapter.
 
 ## 12. Security Considerations
 
@@ -264,8 +264,8 @@ When uninstalling a plugin, its directory is permanently deleted. Ensure that an
 
 After managing plugins, you may want to continue with:
 
-- [Plugin Development](../plugins/intro.md) – learn how to create custom plugins.
-- [Hooks Reference](../plugins/hooks-reference.md) – explore the full list of available hooks.
+- [Plugin Development](../plugins-dev/intro.md) – learn how to create custom plugins.
+- [Hooks Reference](../plugins-dev/hooks-reference.md) – explore the full list of available hooks.
 - [Site Settings](site-settings.md) – configure the general site identity and homepage content.
 - [Navigation Menus](navigation.md) – manage header and footer menu items.
 - [Content Management](../content/publications.md) – create and manage publications, slides, tools, projects, and news.

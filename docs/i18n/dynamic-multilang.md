@@ -281,7 +281,7 @@ Custom content types can be made translatable by registering filters similar to 
 After understanding the Dynamic Multi-Language plugin, you may want to explore:
 
 - [Core Language Packs](core-lang.md) – details about the static translation system.
-- [Plugin System Introduction](../plugins/intro.md) – general plugin architecture.
-- [Developing Your First Plugin](../plugins/develop.md) – learn how to create custom plugins.
-- [Hooks Reference](../plugins/hooks-reference.md) – complete list of available filters and actions.
-- [Plugin Examples](../plugins/examples.md) – working examples, including the Dynamic Multi-Language plugin.
+- [Plugin System Introduction](../plugins-dev/intro.md) – general plugin architecture.
+- [Developing Your First Plugin](../plugins-dev/develop.md) – learn how to create custom plugins.
+- [Hooks Reference](../plugins-dev/hooks-reference.md) – complete list of available filters and actions.
+- [Plugin Examples](../plugins-dev/examples.md) – working examples, including the Dynamic Multi-Language plugin.

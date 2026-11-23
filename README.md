@@ -265,7 +265,7 @@ LabPress/
 ├── labpressexample.sql # Example database dump
 │
 ├── .gitignore # Git ignore rules
-├── LICENSE # Open-source license (MIT)
+├── LICENSE # Open-source license (GPL-3.0)
 └── README.md # Project overview & setup guide
 ```
 

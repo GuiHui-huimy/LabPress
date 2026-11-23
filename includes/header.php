@@ -54,7 +54,7 @@ $currentLang = !empty($currentLang) ? $currentLang[0] : null;
                     <ul class="lang-dropdown" id="langDropdown" style="display: none;">
                         <?php foreach ($languages as $lang): ?>
                             <li>
-                                <a href="<?= htmlspecialchars(strtok($_SERVER['REQUEST_URI'], '?')) ?>?lang=<?= urlencode($lang['locale']) ?>" class="lang-item">
+                                <a href="<?= e(lp_url_for_lang($lang['locale'])) ?>" class="lang-item">
                                     <?= htmlspecialchars($lang['flag'] ?? '🌐') ?> <?= htmlspecialchars($lang['name']) ?>
                                 </a>
                             </li>
