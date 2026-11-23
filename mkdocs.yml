@@ -86,13 +86,13 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/GuiHui-huimy/LabPress
     - icon: fontawesome/solid/globe
-      link: https://labpress.huimy.top          # 主站
+      link: https://www.huimy.top          # 主站
     - icon: fontawesome/solid/newspaper
       link: https://blog.huimy.top              # 博客
     - icon: fontawesome/solid/comments
-      link: https://forum.huimy.top             # 社区
+      link: https://comm.huimy.top             # 社区
     - icon: fontawesome/solid/flask
-      link: https://your-lab-website.com        # 实验室（替换为真实链接）
+      link: https://lab.huimy.top        # 实验室（替换为真实链接）
 
 # Extensions
 markdown_extensions:
