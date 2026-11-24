@@ -140,8 +140,10 @@ Core hooks use descriptive names that indicate their location or purpose. Exampl
 - `before_head_end` – fired in the frontend `<head>`.
 - `footer_scripts` – fired in the frontend footer.
 - `admin_before_head_end` – fired in the admin `<head>`.
+- `admin_topbar_actions` – fired inside the admin topbar after the user chip.
 - `nav_menu_item` – filter applied to each menu item.
 - `translate` – filter applied to translated strings.
+- `admin_locale` – filter applied to the backend default locale.
 - `slides_data` – filter applied to slide data.
 
 Plugins can define their own custom hooks, but they are not required to do so. A full list of core hooks is available in [Hooks Reference](hooks-reference.md).
@@ -248,10 +250,11 @@ Registered pages are merged into the admin menu during the admin panel initializ
 
 Plugins can provide their own language files under a `languages/` directory inside the plugin folder.
 
-The core supports two loading methods:
+The core uses **explicit loading** only:
 
-- **Automatic loading** – The translation function scans all active plugins and merges their language files into the global language array. This can cause key collisions if plugin keys are not unique.
-- **Explicit loading** – The plugin calls `__('key', 'plugin:plugin-slug')` to load translations only from that plugin. This avoids conflicts and is the recommended approach for plugins that define common keys.
+- **Explicit loading** – The plugin calls `__('key', 'plugin:plugin-slug')` to load translations only from that plugin. This avoids conflicts and is required for plugin interface strings.
+
+Plugin language files are never merged into the global core language array. If a plugin is deactivated or removed, its language callback disappears and core strings keep loading from the root `languages/` packs.
 
 Plugin language keys should use a unique prefix even when using explicit loading, to avoid confusion and to make the translation files easier to maintain.
 

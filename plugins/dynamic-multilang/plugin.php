@@ -2,11 +2,109 @@
 /**
  * Plugin Name: Dynamic Multi-Language
  * Description: 为导航菜单、页脚链接、轮播图、关于我们、研究方向提供动态多语言翻译管理。
- * Version: 2.0.1
+ * Version: 2.0.2
  * Author: LabPress Community
+ * version: 2.0.2 change 2026-11-24
+ *      - add plugin-owned admin locale filter, login/admin switchers, and isolated plugin language loading.
  * version: 2.0.1 change 2026-08-14
  *      - revise the language key to 'ml_' prefix ,to avoid conflict with core language key.
  */
+
+// ============================================================
+// 后台独立语言（插件接管，核心没有插件时自动回退站点默认语言）
+// ============================================================
+
+/**
+ * admin_locale 过滤器回调。
+ * 优先级：当前请求 lang > session > cookie > 核心传入的站点默认语言。
+ */
+function ml_admin_locale($locale, $available = []) {
+    if (!defined('IS_ADMIN') && strpos($_SERVER['SCRIPT_NAME'] ?? '', '/admin/') === false) {
+        return $locale;
+    }
+
+    $available = is_array($available) ? $available : array_column(getAvailableLanguages(), 'locale');
+    $requested = isset($_GET['lang']) ? (string)$_GET['lang'] : '';
+
+    if ($requested !== '' && in_array($requested, $available, true)) {
+        $_SESSION['ml_admin_locale'] = $requested;
+        if (!headers_sent()) {
+            setcookie('ml_admin_locale', $requested, [
+                'expires'  => time() + 86400 * 30,
+                'path'     => '/',
+                'httponly' => true,
+                'samesite' => 'Lax',
+                'secure'   => !empty($_SERVER['HTTPS']),
+            ]);
+        }
+        return $requested;
+    }
+
+    $sessionLocale = $_SESSION['ml_admin_locale'] ?? '';
+    if ($sessionLocale !== '' && in_array($sessionLocale, $available, true)) {
+        return $sessionLocale;
+    }
+
+    $cookieLocale = $_COOKIE['ml_admin_locale'] ?? '';
+    if ($cookieLocale !== '' && in_array($cookieLocale, $available, true)) {
+        return $cookieLocale;
+    }
+
+    return $locale;
+}
+LabPress_Hooks::addFilter('admin_locale', 'ml_admin_locale', 10, 2);
+
+/**
+ * 渲染后台 / 登录页的语言切换入口。
+ */
+function ml_render_admin_language_switcher($context = 'admin') {
+    $languages = getAvailableLanguages();
+    if (count($languages) < 2) {
+        return;
+    }
+
+    $current = getLocale();
+    $class = $context === 'login' ? 'ml-login-lang' : 'ml-admin-lang';
+
+    echo '<div class="' . $class . '" role="group" aria-label="Language">';
+    $first = true;
+    foreach ($languages as $language) {
+        $localeCode = (string)($language['locale'] ?? '');
+        if ($localeCode === '') {
+            continue;
+        }
+        if (!$first) {
+            echo '<span class="ml-lang-sep" aria-hidden="true">/</span>';
+        }
+        $first = false;
+        $label = (string)($language['name'] ?? $localeCode);
+        $active = $localeCode === $current ? ' is-active' : '';
+        echo '<a class="ml-lang-link' . $active . '" '
+            . 'href="' . e(lp_url_for_lang($localeCode)) . '" '
+            . 'hreflang="' . e(str_replace('_', '-', $localeCode)) . '">'
+            . e($label) . '</a>';
+    }
+    echo '</div>';
+}
+
+LabPress_Hooks::addAction('admin_topbar_actions', function() {
+    ml_render_admin_language_switcher('admin');
+});
+LabPress_Hooks::addAction('login_after_form', function() {
+    ml_render_admin_language_switcher('login');
+});
+
+/**
+ * 只在后台 / 登录页加载插件后台样式。
+ */
+function ml_admin_assets() {
+    if (!defined('IS_ADMIN') && strpos($_SERVER['SCRIPT_NAME'] ?? '', '/admin/') === false) {
+        return;
+    }
+    echo '<link rel="stylesheet" href="../plugins/dynamic-multilang/assets/dm-admin.css">';
+}
+LabPress_Hooks::addAction('before_head_end', 'ml_admin_assets');
+LabPress_Hooks::addAction('admin_before_head_end', 'ml_admin_assets');
 
 // 安装：创建翻译表
 LabPress_Hooks::addAction('plugin_activation', function($slug) {
@@ -113,7 +211,7 @@ LabPress_Hooks::addAction('init', function() {
 });
 
 // ========== 后台管理页面（独立文件，不影响前台） ==========
-LabPress::registerAdminPage('dynamic-multilang', __('ml_plugin_name'), function() {
+LabPress::registerAdminPage('dynamic-multilang', __('ml_plugin_name', 'plugin:dynamic-multilang'), function() {
     require_once __DIR__ . '/admin-page.php';
 });
 

@@ -124,12 +124,12 @@ $currentUser = $_SESSION['user'] ?? '';
 
     <div class="admin-main">
         <header class="admin-topbar">
-            <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="打开导航菜单">
+            <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="<?= e(__('open_menu', 'admin')) ?>">
                 <i class="fas fa-bars"></i>
             </button>
             <div class="topbar-crumb">
                 <span class="dot-live" aria-hidden="true"></span>
-                <span>Console</span>
+                <span><?= e(__('console', 'admin')) ?></span>
                 <span class="sep">/</span>
                 <span class="current"><?= e($viewTitle) ?></span>
             </div>
@@ -139,8 +139,9 @@ $currentUser = $_SESSION['user'] ?? '';
                 <span class="hide-sm">v<?= e(LABPRESS_VERSION) ?></span>
                 <span class="sep hide-sm">/</span>
                 <span class="user-chip"><i class="fas fa-user"></i><?= e($currentUser) ?></span>
+                <?php LabPress_Hooks::doAction('admin_topbar_actions'); ?>
                 <a class="topbar-link" href="/" target="_blank" rel="noopener">
-                    <i class="fas fa-external-link-alt"></i> 站点
+                    <i class="fas fa-external-link-alt"></i> <?= e(__('site_label', 'admin')) ?>
                 </a>
             </div>
         </header>
@@ -148,7 +149,7 @@ $currentUser = $_SESSION['user'] ?? '';
         <?php if ($view !== 'dashboard'): ?>
         <section class="page-head">
             <div>
-                <div class="eyebrow">LabPress Console</div>
+                <div class="eyebrow"><?= e(__('console', 'admin')) ?></div>
                 <h1><?= e($viewTitle) ?></h1>
             </div>
         </section>

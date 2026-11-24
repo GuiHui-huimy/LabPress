@@ -18,6 +18,11 @@
     var capsNote = document.getElementById('capsNote');
     var formWrap = document.getElementById('formWrap');
     var clockEl = document.getElementById('clock');
+    var L = window.LP_LOGIN_LANG || {};
+
+    function tr(key, fallback) {
+        return L[key] || fallback;
+    }
 
     /* ---------------- live clock ---------------- */
     function tickClock() {
@@ -50,7 +55,7 @@
 
     function validateUsername() {
         if (!usernameInput.value.trim()) {
-            setError(usernameInput, '请输入用户名。');
+            setError(usernameInput, tr('usernameRequired', 'Please enter your username.'));
             return false;
         }
         setError(usernameInput, null);
@@ -59,7 +64,7 @@
 
     function validatePassword() {
         if (!passwordInput.value) {
-            setError(passwordInput, '请输入密码。');
+            setError(passwordInput, tr('passwordRequired', 'Please enter your password.'));
             return false;
         }
         setError(passwordInput, null);
@@ -101,9 +106,13 @@
         toggleBtn.addEventListener('click', function () {
             var isHidden = passwordInput.type === 'password';
             passwordInput.type = isHidden ? 'text' : 'password';
-            toggleBtn.textContent = isHidden ? 'HIDE' : 'SHOW';
+            toggleBtn.textContent = isHidden
+                ? tr('hideShort', 'HIDE')
+                : tr('showShort', 'SHOW');
             toggleBtn.setAttribute('aria-pressed', String(isHidden));
-            toggleBtn.setAttribute('aria-label', isHidden ? '隐藏密码' : '显示密码');
+            toggleBtn.setAttribute('aria-label', isHidden
+                ? tr('hideFull', 'Hide password')
+                : tr('showFull', 'Show password'));
         });
     }
 
@@ -122,12 +131,12 @@
         /* let the native POST continue; just show a busy state */
         submitBtn.disabled = true;
         submitBtn.classList.add('loading');
-        if (btnLabel) btnLabel.textContent = '验证中';
+        if (btnLabel) btnLabel.textContent = tr('verifying', 'Verifying');
     });
 
     /* ---------------- server-side error state ---------------- */
     if (document.body.getAttribute('data-auth-error') === '1') {
-        setError(passwordInput, passwordInput.closest('.field').getAttribute('data-server-error') || '用户名或密码错误。');
+        setError(passwordInput, passwordInput.closest('.field').getAttribute('data-server-error') || tr('loginError', 'Invalid username or password.'));
         shakeCard();
         window.setTimeout(function () { passwordInput.focus(); }, 120);
     }

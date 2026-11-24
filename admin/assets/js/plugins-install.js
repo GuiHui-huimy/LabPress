@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.uninstall-plugin-btn').forEach(function (btn) {
         btn.addEventListener('click', async function () {
             const slug = this.dataset.slug;
-            if (!confirm(L.uninstall_confirm + ' ' + slug + '？')) return;
+            if (!confirm(L.uninstall_confirm + ' ' + slug + '?')) return;
             try {
                 const res = await fetch('../api/plugin-uninstall.php', {
                     method: 'POST',

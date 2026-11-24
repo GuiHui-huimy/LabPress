@@ -64,7 +64,7 @@ languages/
     └── publications.php
 ```
 
-The `lang.config` file contains metadata for the language, including its display name, flag, locale code, and text direction. This metadata is used to populate the language switcher in the frontend and the language dropdown in the admin panel.
+The `lang.config` file contains metadata for the language, including its display name, flag, locale code, and text direction. This metadata is used to populate the frontend language switcher and, when the Dynamic Multi-Language plugin is active, the admin language switcher.
 ```
 <?php
 // languages/en_US/lang.config
@@ -125,17 +125,19 @@ The frontend language switcher is rendered automatically if more than one langua
 
 ### 4.2 Backend Language Policy
 
-The backend always uses the site default language, regardless of the frontend language cookie or URL parameter. This ensures that administrators see a consistent interface while managing content.
+By default, the backend uses the site default language and ignores the frontend language cookie or URL parameter. This ensures that a fresh installation has a predictable, single-language admin interface.
 
-The `getLocale()` function detects whether the current request is for an admin page by checking the `IS_ADMIN` constant or the script path. If the request is in the admin area, it returns the default language immediately.
+The `getLocale()` function detects whether the current request is for an admin page by checking the `IS_ADMIN` constant or the script path. In the admin branch it applies the `admin_locale` filter to the site default language. If no plugin handles that filter, the default locale is returned unchanged.
 
-This decoupling means that an administrator can keep the backend in English while visitors browse the frontend in Chinese, or vice versa.
+The Dynamic Multi-Language plugin uses this filter to provide an independent admin language preference. Its language switcher is rendered in the admin topbar and on the login page; the selected locale is stored in a session value and a dedicated `ml_admin_locale` cookie. This preference is separate from the frontend `lang` cookie, so an administrator can keep the backend in English while visitors browse the frontend in Chinese, or vice versa.
+
+If the plugin is deactivated or removed, the `admin_locale` filter has no callback and the backend automatically falls back to the site default language. No core page depends on the plugin being present.
 
 ### 4.3 Available Languages
 
 The list of available languages is discovered automatically by scanning the `languages/` directory. The `getAvailableLanguages()` function reads each subdirectory’s `lang.config` file and builds an array of metadata.
 
-Adding a new language to the system is therefore as simple as creating a new directory with a valid `lang.config` file and the required language files. The new language will appear in the language switcher and the admin language dropdown without code changes.
+Adding a new language to the system is therefore as simple as creating a new directory with a valid `lang.config` file and the required language files. The new language will appear in the frontend language switcher without code changes. The admin switcher picks it up only when the Dynamic Multi-Language plugin is active, because that switcher is provided by the plugin.
 
 ## 5. Dynamic Multi-Language Plugin
 
@@ -191,29 +193,27 @@ One of the key design goals of the i18n system is to keep the frontend and backe
 
 The backend uses the site default language so that administrators can work with a consistent interface. The frontend respects visitor language preferences. This separation is implemented in `getLocale()` and is independent of content translation.
 
-Because the Dynamic Multi-Language plugin skips translation when the current request is an admin page, the admin interface always shows the original database content. This prevents administrators from being confused by translated values when editing the site.
+The backend can optionally expose an independent language preference through the `admin_locale` filter. The Dynamic Multi-Language plugin implements that filter and renders a switcher in the login page and admin topbar; if the plugin is absent, `getLocale()` returns the site default language.
+
+Because the Dynamic Multi-Language plugin skips dynamic-content translation when the current request is an admin page, the admin interface always shows the original database content. This prevents administrators from being confused by translated values when editing the site.
 
 ## 7. Plugin Language Support
 
 Plugins can provide their own language files and participate in the translation system.
 
-### 7.1 Automatic Loading
+### 7.1 Explicit Loading Only
 
-When the core initializes, it scans all active plugins and loads their language files for the current locale. This automatic loading allows plugin interface strings to be translated without additional code.
-
-The plugin language files are stored in the plugin’s `languages/` directory and follow the same naming convention as core language files, for example `zh_CN.php` and `en_US.php`.
-
-### 7.2 Explicit Plugin Loading
-
-Because plugin language keys can conflict with core keys, LabPress supports explicit plugin-language loading using a special module prefix.
-
-To load a string from a specific plugin, use the `plugin:` prefix followed by the plugin directory name:
+Plugin language files are not merged into the core namespace automatically. Plugin code must request its own language module explicitly:
 
 ```php
 __('ml_plugin_name', 'plugin:dynamic-multilang');
 ```
 
-This instructs the translation function to load the language file from the specified plugin only, avoiding global key conflicts. Plugin developers are encouraged to use unique key prefixes, such as `ml_`, `fi_`, or a plugin-specific abbreviation, even when using explicit loading.
+The plugin language files are stored in the plugin's `languages/` directory and follow the same naming convention as core language files, for example `zh_CN.php` and `en_US.php`.
+
+### 7.2 Why Explicit Loading
+
+Because plugin language keys can conflict with core keys, LabPress requires the explicit `plugin:` module prefix. This instructs the translation function to load the language file from the specified plugin only, avoiding global key conflicts. Plugin developers should still use unique key prefixes, such as `ml_`, `fi_`, or a plugin-specific abbreviation, even when using explicit loading.
 
 ## 8. Extending Internationalization
 
@@ -221,7 +221,7 @@ The i18n system can be extended in several ways.
 
 ### 8.1 Adding a New Language
 
-To add a new language, create a new subdirectory under `languages/` with a valid `lang.config` file and the required language files. The language will automatically appear in the frontend language switcher and the admin language dropdown.
+To add a new language, create a new subdirectory under `languages/` with a valid `lang.config` file and the required language files. The language will automatically appear in the frontend language switcher. The admin switcher is plugin-provided, so it lists the new language only while the Dynamic Multi-Language plugin is active.
 
 Core modules should be translated and placed in the new locale directory. Active plugins may also need language files in their own `languages/` directories.
 
@@ -236,6 +236,7 @@ Developers can modify translation behavior through the LabPress hook system. Rel
 | `slides_data` | Filter | Applied to slide data before output. Used for slide translation. |
 | `stat_value` | Filter | Applied to statistics values before output. |
 | `page_title_full` | Filter | Applied to the final page title string. |
+| `admin_locale` | Filter | Applied to the backend default locale; plugins can return a valid locale to override it. |
 
 Plugin developers can register additional filters to support translation for custom content types.
 

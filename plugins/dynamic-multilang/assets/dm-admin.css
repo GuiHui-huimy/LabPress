@@ -4,3 +4,61 @@
 .card-header {
     font-weight: 600;
 }
+
+/* ==================================================================
+   Admin locale switch — 由 Dynamic Multi-Language 插件注入
+   ================================================================== */
+.ml-admin-lang {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .6px;
+    text-transform: none;
+    white-space: nowrap;
+}
+.ml-admin-lang .ml-lang-link,
+.ml-login-lang .ml-lang-link {
+    color: var(--c-body-dark, #666666);
+    text-decoration: none;
+    padding: 2px 5px;
+    border-bottom: 1px solid transparent;
+    transition: color .2s, border-color .2s, background .2s;
+}
+.ml-admin-lang .ml-lang-link:hover,
+.ml-login-lang .ml-lang-link:hover {
+    color: var(--c-wine, #851f1f);
+    border-color: var(--c-wine, #851f1f);
+}
+.ml-admin-lang .ml-lang-link.is-active,
+.ml-login-lang .ml-lang-link.is-active {
+    color: var(--c-wine, #851f1f);
+    border-color: var(--c-wine, #851f1f);
+    background: #fdfafa;
+}
+.ml-lang-sep {
+    color: #dcdcdc;
+}
+
+.ml-login-lang {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 16px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .6px;
+    text-transform: none;
+}
+
+@media (max-width: 600px) {
+    .ml-admin-lang {
+        gap: 2px;
+        font-size: 9px;
+    }
+    .ml-admin-lang .ml-lang-link {
+        padding: 2px 3px;
+    }
+}

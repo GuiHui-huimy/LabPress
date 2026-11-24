@@ -4,8 +4,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     try {
         // 从远程 API 获取市场数据（后续由你自行搭建）
-        const res = await fetch('https://你的市场API地址/api/market.php');
-        if (!res.ok) throw new Error('市场不可用');
+        const res = await fetch('https://example.com/api/market.php');
+        if (!res.ok) throw new Error('Market unavailable');
         const plugins = await res.json();
         if (!plugins || plugins.length === 0) {
             container.innerHTML = '<p class="text-center text-muted">' + L.no_plugins + '</p>';
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                         <div class="card-body">
                             <h5>${p.name}</h5>
                             <p>${p.description}</p>
-                            <p class="text-muted small">版本 ${p.version} | 作者 ${p.author}</p>
+                            <p class="text-muted small">${L.version_label} ${p.version} | ${L.author_label} ${p.author}</p>
                             <button class="btn btn-sm btn-primary install-market-plugin" data-url="${p.download_url}">${L.install_btn}</button>
                         </div>
                     </div>

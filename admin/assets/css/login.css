@@ -82,7 +82,13 @@ input:focus-visible {
     font-weight: 600;
     letter-spacing: 2px;
     font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color .2s;
 }
+.brand:hover { color: var(--c-wine); }
 .brand span { color: var(--c-wine); }
 
 .meta-line {
@@ -220,7 +226,7 @@ input:focus-visible {
     height: 6px;
     background: var(--c-wine);
 }
-.visual-list strong { color: #e2e2e2; font-weight: 600; }
+.visual-list strong { color: #e2e2e2; font-weight: 600; margin-right: 6px; }
 
 .visual-foot {
     display: flex;
@@ -402,6 +408,33 @@ input:focus-visible {
 }
 .btn-submit.loading .spinner { display: block; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- back to home ---------- */
+.back-home {
+    width: 100%;
+    margin-top: 14px;
+    padding: 12px 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid var(--c-line);
+    background: transparent;
+    color: var(--c-ink);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: color .2s, border-color .2s, background .2s;
+}
+.back-home:hover {
+    color: var(--c-wine);
+    border-color: var(--c-wine);
+    background: #fdfafa;
+}
+.back-home i { font-size: 11px; }
 
 /* ---------- panel footer ---------- */
 .panel-foot {

@@ -75,7 +75,7 @@ $pluginKeys = file_exists($pluginLangFile) ? include $pluginLangFile : [];
 
 $totalTrans = $db->query("SELECT COUNT(*) FROM ml_translations")->fetchColumn();
 if ($totalTrans == 0) {
-    echo '<div class="alert alert-warning">Warning: ' . __('no_translations_yet', 'admin') . '</div>';
+    echo '<div class="alert alert-warning">' . __('ml_no_translations_yet', 'plugin:dynamic-multilang') . '</div>';
 }
 ?>
 <div class="card">
@@ -197,11 +197,11 @@ if ($totalTrans == 0) {
                         <?php $origText = $item['text']; ?>
                         <div class="card mb-2">
                             <div class="card-header">
-                                <?= $item['type'] === 'stat_label' ? '统计标签' : '卡片文本' ?>
+                                <?= $item['type'] === 'stat_label' ? __('ml_stat_label','plugin:dynamic-multilang') : __('ml_card_text','plugin:dynamic-multilang') ?>
                             </div>
                             <div class="card-body">
                                 <div class="form-group">
-                                    <label><?= str_replace('{locale}', $sourceLocale, __('original_content','plugin:dynamic-multilang')) ?></label>
+                                    <label><?= str_replace('{locale}', $sourceLocale, __('ml_original_content','plugin:dynamic-multilang')) ?></label>
                                     <input type="text" class="form-control" value="<?= htmlspecialchars($origText) ?>" readonly>
                                 </div>
                                 <?php foreach ($targetLocales as $lang): 

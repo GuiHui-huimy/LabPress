@@ -12,7 +12,7 @@ function initNewsEditor() {
         element: textarea,
         spellChecker: false,
         autoDownloadFontAwesome: false,
-        placeholder: window.__NEWS_LANG.editor_placeholder || '输入 Markdown 内容...',
+        placeholder: window.__NEWS_LANG.editor_placeholder || 'Enter Markdown content...',
         toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', '|', 'preview', 'side-by-side', 'fullscreen', '|', 'guide']
     });
 }
@@ -39,7 +39,7 @@ async function editNews(id) {
     const L = window.__NEWS_LANG;
     try {
         const res = await fetch(`../api/data.php?type=news-detail&id=${id}`);
-        if (!res.ok) throw new Error('获取新闻详情失败');
+        if (!res.ok) throw new Error(L.error);
         const news = await res.json();
 
         document.getElementById('newsModal').style.display = 'block';

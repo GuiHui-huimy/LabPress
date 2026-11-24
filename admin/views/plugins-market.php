@@ -27,7 +27,9 @@ window.__MARKET_LANG = {
     install_success: '<?= __('plugin_install_success', 'admin') ?>',
     install_fail: '<?= __('plugin_install_fail', 'admin') ?>',
     network_error: '<?= __('network_error', 'admin') ?>',
-    market_unavailable: '<?= __('plugin_market_unavailable', 'admin') ?>'
+    market_unavailable: '<?= __('plugin_market_unavailable', 'admin') ?>',
+    version_label: '<?= __('plugin_version_label', 'admin') ?>',
+    author_label: '<?= __('plugin_author_label', 'admin') ?>'
 };
 </script>
 <script src="assets/js/plugins-market.js"></script>

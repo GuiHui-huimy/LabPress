@@ -30,8 +30,7 @@ dynamic-multilang/
 │   ├── zh_CN.php
 │   └── en_US.php
 └── assets/
-    ├── dm-admin.css
-    └── dm-admin.js
+    └── dm-admin.css
 ```
 
 - `plugin.php` – main plugin file containing hooks, filters, and utility functions.
@@ -192,17 +191,41 @@ LabPress_Hooks::addFilter('translate', function($value, $key, $locale) {
 
 This filter checks the `plugin_dynamic-multilang` table for translations of plugin-specific keys. It allows the admin interface of the plugin itself to be translated through the same management page.
 
+### 5.4 Admin Locale and Switchers
+
+The plugin owns the optional backend language policy. It registers a filter on `admin_locale` during plugin load, before any core admin translation is requested:
+
+```php
+LabPress_Hooks::addFilter('admin_locale', 'ml_admin_locale', 10, 2);
+```
+
+`ml_admin_locale()` resolves the backend locale in this order:
+
+1. A valid `lang` query parameter on an admin request.
+2. The `ml_admin_locale` value stored in the current session.
+3. The `ml_admin_locale` cookie.
+4. The site default locale passed in by the core `getLocale()` function.
+
+A valid selection is written to the session and to a dedicated `ml_admin_locale` cookie. The cookie is separate from the frontend `lang` cookie, so changing the admin language does not change the public site language.
+
+The plugin renders its switcher through two core hooks:
+
+- `admin_topbar_actions` in `admin/index.php`, after the user chip.
+- `login_after_form` in `admin/login.php`, below the login and back-home buttons.
+
+If the plugin is inactive or removed, no `admin_locale` callback exists. The core `getLocale()` function then falls back to the site default locale, so the login page and admin console continue to work without any plugin dependency.
+
 ## 6. Admin Management Page
 
 The plugin registers an admin page using `LabPress::registerAdminPage()`:
 
 ```php
-LabPress::registerAdminPage('dynamic-multilang', ' Dynamic Multi-Language', function() {
+LabPress::registerAdminPage('dynamic-multilang', __('ml_plugin_name', 'plugin:dynamic-multilang'), function() {
     require_once __DIR__ . '/admin-page.php';
 });
 ```
 
-The page is accessible from the admin sidebar and requires the `all` permission. The page title is defined as a literal string in the registration call, but the page content uses the plugin’s language files for its interface text.
+The page is accessible from the admin sidebar and requires the `all` permission. The page title, like the rest of the plugin's interface, is loaded through the explicit `plugin:dynamic-multilang` language module.
 
 The admin page organizes translations into several tabs:
 
@@ -248,9 +271,9 @@ Because the uninstall hook is fired before the plugin files are deleted, the plu
 
 ## 9. Source Locale and Backend Behavior
 
-The source locale is the language in which the original content is stored. By default, it is the site default language, but it can be changed through the plugin’s admin page.
+The source locale is the language in which the original content is stored. By default, it is the site default language, but it can be changed through the plugin's admin page.
 
-The plugin intentionally skips translation when the current request is an admin page. This ensures that administrators always see the original source content in the backend, regardless of the frontend language setting.
+The plugin intentionally skips dynamic-content translation when the current request is an admin page. This ensures that administrators always see the original source content in the backend, regardless of the frontend language setting. Backend interface strings are a separate concern: they are selected through the `admin_locale` filter and the plugin's admin language switcher described in section 5.4.
 
 On the frontend, translation is applied only when the current locale differs from the source locale. If the current locale is the same as the source locale, `ml_get_translation()` returns `null`, and the original content is displayed.
 

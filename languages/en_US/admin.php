@@ -46,13 +46,46 @@ return [
 
     // 登录页
     'login_title' => 'Admin Login',
+    'login_meta_description' => 'Laboratory portal admin login',
     'username' => 'Username',
     'password' => 'Password',
     'login_btn' => 'Login',
     'login_error' => 'Invalid username or password',
 
-    // 仪表盘
+    // Login screen
+    'secure_access' => 'SECURE ACCESS',
+    'system_operational' => 'System operational',
+    'node_01' => 'Node 01',
+    'auth_label' => 'Authentication',
+    'login_heading' => 'Enter the <span class="hl">Laboratory</span><br>Admin Portal.',
+    'login_intro' => 'Sign in to the Laboratory portal admin console with the account assigned by your administrator.',
+    'login_note_1_title' => 'Authorized members only.',
+    'login_note_1_text' => 'Accounts are issued by the site administrator; self-registration is not available.',
+    'login_note_2_title' => 'Use your own account.',
+    'login_note_2_text' => 'Do not share accounts, and sign out before leaving the console.',
+    'login_note_3_title' => 'Need help?',
+    'login_note_3_text' => 'Contact the site administrator if sign-in fails or a permission is missing.',
+    'sign_in_label' => 'Sign in',
+    'login_welcome' => 'Welcome back',
+    'login_sub' => 'Enter your administrator account to continue.',
+    'username_placeholder' => 'your-username',
+    'show_password' => 'Show password',
+    'hide_password' => 'Hide password',
+    'show_password_short' => 'SHOW',
+    'hide_password_short' => 'HIDE',
+    'caps_lock_on' => 'Caps Lock is on',
+    'username_required' => 'Please enter your username.',
+    'password_required' => 'Please enter your password.',
+    'verifying' => 'Verifying',
+    'back_home' => 'Back to home',
+
+    // Dashboard
     'system_overview' => 'System Overview',
+    'console' => 'Console',
+    'systems_nominal' => 'Systems nominal',
+    'dashboard_intro' => 'One place to manage publications, projects, tools and research news.',
+    'site_label' => 'Site',
+    'open_menu' => 'Open navigation menu',
     'stat_publications' => 'Publications',
     'stat_slides' => 'Slides',
     'stat_tools' => 'Tools',
@@ -153,6 +186,8 @@ return [
     'version_download_icon' => 'Icon class (fas fa-download)',
     'version_add_change' => '+ Add change',
     'version_add_download' => '+ Add download',
+    'count_unit' => ' items',
+    'none' => 'None',
 
     // 项目管理
     'project_title' => 'Title',

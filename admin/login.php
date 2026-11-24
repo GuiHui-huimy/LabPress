@@ -26,10 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= e(__('login_title', 'admin')) ?> — LabPress</title>
-<meta name="description" content="LabPress 管理后台登录">
+<meta name="description" content="<?= e(__('login_meta_description', 'admin')) ?>">
 <meta name="robots" content="noindex, nofollow">
 <link rel="preload" href="assets/fonts/roboto-mono/roboto-mono-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="../assets/fontawesome/css/all.min.css">
 <link rel="stylesheet" href="assets/css/login.css">
 <?php LabPress_Hooks::doAction('before_head_end'); ?>
 </head>
@@ -38,10 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="topbar">
     <div class="topbar-inner">
-        <div class="brand">LAB<span>·</span>PRESS · SECURE ACCESS</div>
+        <a class="brand" href="../">LAB<span>·</span>PRESS · <?= e(__('secure_access', 'admin')) ?></a>
         <div class="meta-line">
             <span class="dot-live" aria-hidden="true"></span>
-            <span>系统运行正常</span>
+            <span><?= e(__('system_operational', 'admin')) ?></span>
             <span class="sep">/</span>
             <span id="clock">--:--:--</span>
         </div>
@@ -52,32 +53,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <section class="auth-visual">
         <div class="visual-top">
-            <div class="eyebrow">Authentication · 身份验证</div>
-            <h2>进入<span class="hl">实验室</span><br>后台。</h2>
+            <div class="eyebrow"><?= e(__('auth_label', 'admin')) ?></div>
+            <h2><?= __('login_heading', 'admin') ?></h2>
             <p class="visual-sub">
-                在这里维护论文、项目、工具与科研动态，让站点内容与实验室的最新进展保持一致。
+                <?= e(__('login_intro', 'admin')) ?>
             </p>
 
             <ul class="visual-list">
-                <li><strong>统一入口。</strong>内容、成员与站点配置集中在一个控制台。</li>
-                <li><strong>权限分级。</strong>按角色开放论文、工具、用户与插件管理。</li>
-                <li><strong>操作留痕。</strong>发布、上传与插件变更均可追溯。</li>
+                <li><strong><?= e(__('login_note_1_title', 'admin')) ?></strong><?= e(__('login_note_1_text', 'admin')) ?></li>
+                <li><strong><?= e(__('login_note_2_title', 'admin')) ?></strong><?= e(__('login_note_2_text', 'admin')) ?></li>
+                <li><strong><?= e(__('login_note_3_title', 'admin')) ?></strong><?= e(__('login_note_3_text', 'admin')) ?></li>
             </ul>
         </div>
 
         <div class="visual-foot">
-            <span><span class="dot-live" aria-hidden="true"></span> System operational</span>
-            <span>LAB-PRESS / node-01</span>
+            <span><span class="dot-live" aria-hidden="true"></span> <?= e(__('system_operational', 'admin')) ?></span>
+            <span>LAB-PRESS / <?= e(__('node_01', 'admin')) ?></span>
         </div>
     </section>
 
     <section class="auth-panel">
         <div class="form-wrap" id="formWrap">
 
-            <div class="eyebrow">Sign in · 登录</div>
-            <h1 class="form-title">欢迎回来<span class="accent">.</span></h1>
+            <div class="eyebrow"><?= e(__('sign_in_label', 'admin')) ?></div>
+            <h1 class="form-title"><?= e(__('login_welcome', 'admin')) ?><span class="accent">.</span></h1>
             <p class="form-sub">
-                请输入管理员账号，继续进入你的工作台。
+                <?= e(__('login_sub', 'admin')) ?>
             </p>
 
             <?php LabPress_Hooks::doAction('login_before_form'); ?>
@@ -85,10 +86,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <form id="loginForm" method="post" action="" novalidate>
 
                 <div class="field">
-                    <label for="username">用户名 <span class="req">*</span></label>
+                    <label for="username"><?= e(__('username', 'admin')) ?> <span class="req">*</span></label>
                     <div class="input-shell">
                         <input type="text" id="username" name="username"
-                               placeholder="your-username"
+                               placeholder="<?= e(__('username_placeholder', 'admin')) ?>"
                                autocomplete="username" spellcheck="false"
                                aria-describedby="usernameError" required>
                     </div>
@@ -96,16 +97,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <div class="field<?= $error ? ' has-error' : '' ?>" data-server-error="<?= e($error) ?>">
-                    <label for="password">密码 <span class="req">*</span></label>
+                    <label for="password"><?= e(__('password', 'admin')) ?> <span class="req">*</span></label>
                     <div class="input-shell has-toggle">
                         <input type="password" id="password" name="password"
                                placeholder="••••••••"
                                autocomplete="current-password"
                                aria-describedby="passwordError" required>
                         <button type="button" class="toggle-pw" id="togglePw"
-                                aria-label="显示密码" aria-pressed="false">SHOW</button>
+                                aria-label="<?= e(__('show_password', 'admin')) ?>" aria-pressed="false"><?= e(__('show_password_short', 'admin')) ?></button>
                     </div>
-                    <p class="caps-note" id="capsNote" hidden>Caps Lock 已开启</p>
+                    <p class="caps-note" id="capsNote" hidden><?= e(__('caps_lock_on', 'admin')) ?></p>
                     <p class="field-error" id="passwordError" role="alert"><?= e($error) ?></p>
                 </div>
 
@@ -114,6 +115,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span class="btn-label"><?= e(__('login_btn', 'admin')) ?></span>
                 </button>
             </form>
+
+            <a class="back-home" href="../">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                <span><?= e(__('back_home', 'admin')) ?></span>
+            </a>
 
             <?php LabPress_Hooks::doAction('login_after_form'); ?>
 
@@ -127,6 +133,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main>
 
+<script>
+window.LP_LOGIN_LANG = <?= json_encode([
+    'usernameRequired' => __('username_required', 'admin'),
+    'passwordRequired' => __('password_required', 'admin'),
+    'showShort' => __('show_password_short', 'admin'),
+    'hideShort' => __('hide_password_short', 'admin'),
+    'showFull' => __('show_password', 'admin'),
+    'hideFull' => __('hide_password', 'admin'),
+    'verifying' => __('verifying', 'admin'),
+    'loginError' => __('login_error', 'admin'),
+], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+</script>
 <script src="assets/js/login.js"></script>
 </body>
 </html>

@@ -564,7 +564,8 @@ function getFullTitle($pageTitle = '', $suffix = '') {
 
 /**
  * 获取当前语言代码
- * 优先级：URL 参数 > Cookie > 系统配置
+ * 前台优先级：URL 参数 > Cookie > 系统配置
+ * 后台：默认站点语言，允许 admin_locale 过滤器接管（插件可选）
  */
 function getLocale() {
     static $locale = null;
@@ -573,9 +574,13 @@ function getLocale() {
         $availLocales = array_column($available, 'locale');
         $defaultLocale = LabPress::config('language', 'zh_CN');
 
-        // 如果是后台页面，强制使用站点默认语言，忽略Cookie/URL参数
-        if (defined('IS_ADMIN') || strpos($_SERVER['SCRIPT_NAME'], '/admin/') !== false) {
-            $locale = $defaultLocale;
+        // 后台默认跟随站点语言；插件可通过 admin_locale 过滤器提供独立的后台语言
+        if (defined('IS_ADMIN') || strpos($_SERVER['SCRIPT_NAME'] ?? '', '/admin/') !== false) {
+            $adminLocale = LabPress_Hooks::applyFilters('admin_locale', $defaultLocale, $availLocales);
+            if (!is_string($adminLocale) || !in_array($adminLocale, $availLocales, true)) {
+                $adminLocale = $defaultLocale;
+            }
+            $locale = $adminLocale;
             return $locale;
         }
 
@@ -608,12 +613,11 @@ function getLocale() {
 function __($key, $module = 'common') {
     static $lang = [];
     static $loadedModules = [];
-    static $pluginsLoaded = false;
 
     $locale = getLocale();
     $baseDir = __DIR__ . '/../languages/';
 
-    // 1. 加载公共语言包
+    // 1. 加载核心公共语言包
     if (!isset($loadedModules['common'])) {
         $file = "{$baseDir}{$locale}/common.php";
         if (file_exists($file)) {
@@ -622,7 +626,7 @@ function __($key, $module = 'common') {
         $loadedModules['common'] = true;
     }
 
-    // 2. 加载核心模块语言包（非插件模块）
+    // 2. 加载核心模块语言包（插件模块必须走 plugin: 前缀）
     if ($module !== 'common' && strpos($module, 'plugin:') !== 0 && !isset($loadedModules[$module])) {
         $file = "{$baseDir}{$locale}/{$module}.php";
         if (file_exists($file)) {
@@ -631,7 +635,7 @@ function __($key, $module = 'common') {
         $loadedModules[$module] = true;
     }
 
-    // 3. 处理显式插件语言来源
+    // 3. 显式插件语言包：只读取指定插件，不污染核心语言命名空间
     if (strpos($module, 'plugin:') === 0) {
         $pluginSlug = substr($module, 7);
         $pluginSlug = preg_replace('/[^a-zA-Z0-9_-]/', '', $pluginSlug);
@@ -648,27 +652,14 @@ function __($key, $module = 'common') {
             }
             return LabPress_Hooks::applyFilters('translate', $value, $key, $locale, $module);
         }
-        // 如果插件语言文件不存在，回退到键名（不做任何输出，调试信息写入全局变量供开发面板读取）
+        // 如果插件语言文件不存在，回退到键名（调试信息写入全局变量供开发面板读取）
         if (defined('LABPRESS_DEBUG') && LABPRESS_DEBUG) {
             $GLOBALS['lp_i18n_missing'][] = $pluginLangFile;
         }
         return LabPress_Hooks::applyFilters('translate', $key, $key, $locale, $module);
     }
 
-    // 4. 自动加载所有已启用插件的语言包（仅一次）
-    if (!$pluginsLoaded) {
-        $activePlugins = function_exists('getActivePlugins') ? getActivePlugins() : [];
-        foreach ($activePlugins as $plugin) {
-            $pluginSlug = preg_replace('/[^a-zA-Z0-9_-]/', '', $plugin);
-            $pluginLangFile = __DIR__ . "/../plugins/{$pluginSlug}/languages/{$locale}.php";
-            if (file_exists($pluginLangFile)) {
-                $lang = array_merge($lang, include $pluginLangFile);
-            }
-        }
-        $pluginsLoaded = true;
-    }
-
-    // 5. 从合并后的全局数组中查找翻译
+    // 4. 从核心语言数组中查找翻译
     $value = $lang;
     foreach (explode('.', $key) as $segment) {
         if (!is_array($value) || !array_key_exists($segment, $value)) {

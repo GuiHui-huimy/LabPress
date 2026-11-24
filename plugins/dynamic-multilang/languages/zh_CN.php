@@ -24,5 +24,8 @@ return [
     'ml_tab_dynamic_content' => '动态内容',
     'ml_dynamic_content_desc' => '以下是从数据库中自动提取的统计标签和研究方向卡片文本。',
     'ml_no_dynamic_content' => '暂无动态内容需要翻译。',
+    'ml_no_translations_yet' => '尚未添加任何翻译。',
+    'ml_stat_label' => '统计标签',
+    'ml_card_text' => '卡片文本',
 ];
 ?>

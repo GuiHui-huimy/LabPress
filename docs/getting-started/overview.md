@@ -168,8 +168,7 @@ LabPress/
 │   │   ├── languages/
 │   │   │   └── zh_CN.php             # Plugin UI language pack
 │   │   └── assets/
-│   │       ├── dm-admin.css          # Admin panel styles
-│   │       └── dm-admin.js           # Admin panel interactions
+│   │       └── dm-admin.css          # Admin panel styles
 │   └── hello-word/                   # Hello World example plugin
 │       └── plugin.php
 │

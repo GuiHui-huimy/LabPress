@@ -24,5 +24,8 @@ return [
     'ml_tab_dynamic_content' => 'Dynamic Content',
     'ml_dynamic_content_desc' => 'The following are automatically extracted statistics tags and research direction card texts from the database.',
     'ml_no_dynamic_content' => 'No dynamic content needs translation.',
-    ];
+    'ml_no_translations_yet' => 'No translations have been added yet.',
+    'ml_stat_label' => 'Statistics label',
+    'ml_card_text' => 'Card text',
+];
 ?>

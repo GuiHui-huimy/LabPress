@@ -5,6 +5,26 @@ All notable changes to LabPress will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-11-24
+
+### Added
+
+- `admin_locale` filter in `getLocale()` for an optional, plugin-owned backend locale policy. The core falls back to the site default locale when no plugin handles the filter.
+- `admin_topbar_actions` action in the admin topbar, allowing plugins to add compact controls such as a language switcher.
+- Dynamic Multi-Language 2.0.2: backend language selection in the login page and admin topbar, persisted in a dedicated `ml_admin_locale` session/cookie, independent from the frontend `lang` cookie.
+
+### Changed
+
+- Core `__()` no longer scans and merges language files from every active plugin. Plugin strings must use the explicit `plugin:{slug}` module, preventing plugin keys from overwriting core UI strings.
+- Dynamic Multi-Language menu registration now uses `__('ml_plugin_name', 'plugin:dynamic-multilang')`.
+- Admin JavaScript for project management, news management, plugin market and plugin install now reads injected language objects instead of hardcoded Chinese labels.
+
+### Fixed
+
+- Fixed the Dynamic Multi-Language admin page using the non-existent `original_content` key instead of `ml_original_content`.
+- Fixed missing `ml_no_translations_yet` interface text in the plugin language packs.
+- Fixed hardcoded “个 / 无” strings in the tool version admin view; they now use the `count_unit` and `none` core keys.
+
 ## [1.1.0] - 2026-08-14
 
 ### Added

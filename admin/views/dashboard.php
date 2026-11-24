@@ -28,13 +28,13 @@ $siteName = LabPress::config('site_name', 'HUI-MY.LAB');
 
 <section class="hero">
     <div>
-        <div class="eyebrow">Console · 控制台</div>
+        <div class="eyebrow"><?= e(__('console', 'admin')) ?></div>
         <h2><?= e($siteName) ?></h2>
-        <p>LabPress 内容管理控制台 —— 论文、项目、工具与科研动态的统一入口。</p>
+        <p><?= e(__('dashboard_intro', 'admin')) ?></p>
     </div>
     <div class="hero-meta">
         <span class="dot-live" aria-hidden="true"></span>
-        <span>Systems nominal</span>
+        <span><?= e(__('systems_nominal', 'admin')) ?></span>
         <span class="sep">/</span>
         <span>v<?= e(LABPRESS_VERSION) ?></span>
     </div>

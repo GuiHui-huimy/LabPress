@@ -64,7 +64,7 @@ Plugins may define their own language directories and are not required to follow
 
 ## 3. Language Metadata
 
-Each language directory contains a `lang.config` file. This file returns a PHP array with metadata that is used when rendering language switchers and admin dropdowns.
+Each language directory contains a `lang.config` file. This file returns a PHP array with metadata that is used when rendering the frontend language switcher and, when the Dynamic Multi-Language plugin is active, the admin language switcher.
 
 A typical `lang.config` file looks like this:
 
@@ -150,8 +150,7 @@ It accepts two parameters:
 The function maintains static caches for:
 
 - Loaded core modules.
-- Merged language data.
-- Whether plugin language files have already been processed.
+- Merged core language data.
 
 This design ensures that language files are loaded only once per PHP request.
 
@@ -177,17 +176,7 @@ This call loads `languages/{locale}/publications.php` and merges its contents in
 
 ### 6.3 Plugin Language Modules
 
-The core supports two methods for loading plugin language files: automatic loading and explicit loading.
-
-#### Automatic Loading
-
-When the first non-plugin translation is requested, the core scans all active plugins and loads their language files for the current locale. This is done once per request.
-
-The automatic loading behavior can cause key collisions if plugin language files contain keys that also exist in the core files. For this reason, plugin language keys should use a unique prefix, such as `ml_`, `fi_`, or another plugin-specific identifier.
-
-#### Explicit Plugin Loading
-
-To avoid collisions entirely, plugin authors can load language strings from a specific plugin by using the `plugin:` prefix in the `$module` argument.
+Plugin language files are **never merged into the core language namespace automatically**. The core `__()` function only loads files under `languages/{locale}/`, plus the explicitly requested plugin file when the module starts with `plugin:`.
 
 ```php
 __('ml_plugin_name', 'plugin:dynamic-multilang');
@@ -196,12 +185,12 @@ __('ml_plugin_name', 'plugin:dynamic-multilang');
 When the module begins with `plugin:`, the translation function:
 
 1. Extracts the plugin directory name from the module string.
-2. Builds the path to the plugin’s language file.
+2. Builds the path to the plugin's language file.
 3. Loads only that file.
-4. Resolves the key within that file’s returned array.
-5. Returns the result directly without merging the plugin language data into the global language array.
+4. Resolves the key within that file's returned array.
+5. Returns the result directly without merging the plugin language data into the global core language array.
 
-This method isolates plugin translations and prevents them from overwriting core keys.
+This explicit loading method isolates plugin translations and prevents a plugin language file from overwriting core keys. A plugin that is deactivated or whose directory is removed simply has no language callback; core strings keep coming from the root language packs.
 
 ## 7. Key Resolution and Fallback
 
@@ -274,7 +263,7 @@ To add a new core language:
 4. Create additional module files as needed: `index.php`, `admin.php`, `news.php`, `projects.php`, `tools.php`, and `publications.php`.
 5. If the language should be available in the admin panel, ensure that the `admin.php` file covers all admin interface keys.
 
-The new language will be detected automatically by `getAvailableLanguages()` and will appear in the language switcher and admin language dropdown.
+The new language will be detected automatically by `getAvailableLanguages()` and will appear in the frontend language switcher. It also appears in the admin switcher while the Dynamic Multi-Language plugin is active, because the plugin renders that control and handles `admin_locale`; without the plugin the backend stays on the site default language.
 
 ## 12. Integration with the Hook System
 
@@ -283,6 +272,7 @@ The core language system exposes several hooks that allow plugins to interact wi
 | Hook | Type | Description |
 |------|------|-------------|
 | `translate` | Filter | Applied to every string returned by `__()`. Can be used to replace strings with translations from other sources. |
+| `admin_locale` | Filter | Applied to the backend default locale. Receives the default locale and the list of available locale codes. Returning an invalid locale falls back to the site default, so core works without a locale plugin. |
 | `page_title_full` | Filter | Applied to the generated full page title. Can be used to customize title output. |
 
 Plugin developers should use these hooks instead of modifying core language files. This preserves compatibility and ensures that custom translation logic remains independent of the core.

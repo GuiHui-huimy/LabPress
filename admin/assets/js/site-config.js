@@ -11,19 +11,19 @@ document.addEventListener('DOMContentLoaded', function () {
         div.innerHTML = `
             <div class="form-row">
                 <div class="form-group" style="flex:0.8;">
-                    <label>${L.stat_icon || '图标'}</label>
+                    <label>${L.stat_icon || 'Icon'}</label>
                     <input type="text" name="stat_icon[]" class="form-control" value="fas fa-star" placeholder="fas fa-tools">
                 </div>
                 <div class="form-group" style="flex:1.2;">
-                    <label>${L.stat_label || '标题'}</label>
+                    <label>${L.stat_label || 'Label'}</label>
                     <input type="text" name="stat_label[]" class="form-control" required>
                 </div>
                 <div class="form-group" style="flex:0.8;">
-                    <label>${L.stat_value || '数值'}</label>
+                    <label>${L.stat_value || 'Value'}</label>
                     <input type="text" name="stat_value[]" class="form-control" required>
                 </div>
                 <div class="form-group" style="display:flex; align-items:flex-end;">
-                    <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.stat-item-row').remove()"><i class="fas fa-times"></i> ${L.delete || '删除'}</button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.stat-item-row').remove()"><i class="fas fa-times"></i> ${L.delete || 'Delete'}</button>
                 </div>
             </div>
         `;
@@ -38,19 +38,19 @@ document.addEventListener('DOMContentLoaded', function () {
         div.innerHTML = `
             <div class="form-row">
                 <div class="form-group">
-                    <label>${L.research_icon || '图标'}</label>
+                    <label>${L.research_icon || 'Icon'}</label>
                     <input type="text" name="research_icon[]" class="form-control" placeholder="flask">
                 </div>
                 <div class="form-group">
-                    <label>${L.research_card_title || '标题'}</label>
+                    <label>${L.research_card_title || 'Title'}</label>
                     <input type="text" name="research_card_title[]" class="form-control">
                 </div>
                 <div class="form-group">
-                    <label>${L.research_card_desc || '描述'}</label>
+                    <label>${L.research_card_desc || 'Description'}</label>
                     <textarea name="research_card_desc[]" class="form-control" rows="2"></textarea>
                 </div>
                 <div class="form-group" style="display:flex; align-items:flex-end;">
-                    <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.research-card-row').remove()"><i class="fas fa-times"></i> ${L.delete || '删除'}</button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.research-card-row').remove()"><i class="fas fa-times"></i> ${L.delete || 'Delete'}</button>
                 </div>
             </div>
         `;
@@ -110,13 +110,13 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             const result = await res.json();
             if (result.success) {
-                alert(L.save_success || '保存成功');
+                alert(L.save_success || 'Saved');
                 location.reload();
             } else {
-                alert((L.save_fail || '保存失败') + ': ' + (result.error || '未知错误'));
+                alert((L.save_fail || 'Save failed') + ': ' + (result.error || 'Unknown error'));
             }
         } catch (err) {
-            alert((L.save_fail || '网络错误') + ': ' + err.message);
+            alert((L.save_fail || 'Network error') + ': ' + err.message);
         }
     });
 });

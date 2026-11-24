@@ -231,9 +231,10 @@ List hooks are triggered before, after, and around each item in public list page
 
 Admin hooks are used in the admin panel and during data save operations.
 
-### 7.1 Admin Head
+### 7.1 Admin Head and Topbar
 
 - **`admin_before_head_end`** – Action, triggered in `admin/index.php` inside `<head>` before `</head>`.
+- **`admin_topbar_actions`** – Action, triggered inside the admin topbar after the user chip. Plugins can add compact controls such as an admin language switcher.
 - **`admin_after_page_content`** – Action, triggered after the main admin page content.
 - **`admin_before_page_content`** – Action, triggered before the main admin page content. Receives the current `$view`.
 
@@ -280,6 +281,7 @@ The save API `api/save.php` applies dynamic hooks based on the content type and 
 ## 10. Translation and Other Filters
 
 - **`translate`** – Filter, applied to every string returned by the `__()` function. Receives the translation value, the original key, the locale, and the module.
+- **`admin_locale`** – Filter, applied to the backend default locale before core uses it. Receives the default locale and the list of available locale codes. Return a valid locale code to override the backend language; an invalid value falls back to the site default. If no plugin implements this filter, the core keeps its default backend language.
 - **`stat_value`** – Filter, applied to statistics values before output on the homepage. Receives the value and the full stat item.
 - **`page_title_full`** – Filter, applied to the generated full page title. Receives the full title, page title, and suffix.
 - **`slides_data`** – Filter, applied to slide data before the API returns it. Receives the slides array.

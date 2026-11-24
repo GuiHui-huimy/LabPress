@@ -85,5 +85,5 @@ $lpMenuIcons = [
             <span><?= e(__('logout', 'admin')) ?></span>
         </a>
     </nav>
-    <div class="sidebar-version">v<?= e(LABPRESS_VERSION) ?> · node-01</div>
+    <div class="sidebar-version">v<?= e(LABPRESS_VERSION) ?> · <?= e(__('node_01', 'admin')) ?></div>
 </aside>
