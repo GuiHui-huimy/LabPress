@@ -6,6 +6,20 @@ All API endpoints are located in the `api/` directory at the project root. The e
 
 The reference is based on the current LabPress source code. Some endpoints may accept additional parameters or may be extended in future releases. Always verify against the actual source files if you are developing against a specific version.
 
+```mermaid
+flowchart LR
+    A[Frontend] --> B[api/data.php<br/>public read]
+    C[Admin panel] --> D[api/save.php<br/>session + permission]
+    C --> E[api/users.php]
+    C --> F[api/upload.php]
+    C --> G[api/auth.php]
+    C --> H[api/plugin-*.php]
+    D --> I[(content tables)]
+    B --> I
+```
+
+The API is intentionally thin: it is a transport layer over the same database tables and hooks used by the admin views. It is not a separate REST service with its own schema.
+
 ---
 
 ## 1. General Conventions
@@ -60,6 +74,30 @@ Typical error response:
 The HTTP status code is usually set to `403` for permission errors, `400` for invalid requests, and `500` for server errors.
 
 Additional security considerations are described in the [Security](../security.md) chapter.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as api/save.php
+    participant Hooks as LabPress_Hooks
+    participant DB as MySQL
+    Client->>API: session cookie + JSON
+    API->>API: check session
+    API->>API: resolve permMap
+    alt no session
+        API-->>Client: 403 {"success":false}
+    else no permission
+        API-->>Client: 403 {"success":false}
+    else allowed
+        API->>Hooks: admin_prepare_data / admin_prepare_type
+        API->>Hooks: admin_before_type_action
+        API->>DB: write
+        API->>Hooks: admin_after_type_action
+        API-->>Client: {"success":true}
+    end
+```
+
+The session check happens before `permMap`; a missing session returns `403` with `未登录`, while a session without the required permission returns `403` with `无权限`. Both are intentionally the same HTTP status.
 
 ---
 
@@ -548,9 +586,18 @@ Success response:
 - The `data.php` endpoint is not authenticated and should not expose sensitive information.
 - For custom content types, it is recommended to create a dedicated API endpoint or extend the existing `data.php` and `save.php` with new cases.
 
----
+## 9. Operational Checks
 
-## 9. Next Steps
+- [ ] The endpoint path and method match the source, not an older route.
+- [ ] A write request includes a valid session cookie.
+- [ ] The required permission is present in `permMap`.
+- [ ] `Content-Type: application/json` is sent for JSON bodies.
+- [ ] `site-config` receives key-value pairs, with JSON-encoded `stat_items` and `research_cards`.
+- [ ] The response is checked for both HTTP status and the JSON `success` field.
+- [ ] Upload paths are relative to the web root and writable.
+- [ ] Plugin ZIPs are trusted before an install endpoint is called.
+
+## 10. Next Steps
 
 After reviewing the API reference, you may want to continue with:
 

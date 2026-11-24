@@ -2,13 +2,22 @@
 
 This chapter examines the example plugins included with LabPress and explains how they use the plugin system to implement real functionality. The purpose is to give plugin developers concrete references for common patterns, including frontend output, data filtering, admin pages, database table management, and plugin language support.
 
-The examples are based on the plugins shipped in the `plugins/` directory of the LabPress repository:
+The current default checkout ships two production plugins:
 
-- `hello-word` – a minimal example plugin.
 - `FooterInfo` – a plugin that adds configurable footer content.
 - `dynamic-multilang` – a full-featured plugin that translates database-stored content.
 
-All paths and slugs in this chapter reflect the default repository layout. If your installation uses different directory names, adjust the paths accordingly.
+The third example, `hello-word`, is a deliberately minimal teaching plugin used in this chapter to show the smallest possible structure. It is not present in the default `plugins/` directory; create it locally if you want to follow the walkthrough. All paths and slugs in this chapter reflect the default repository layout.
+
+```mermaid
+flowchart LR
+    A[hello-word] --> B[footer action + admin page]
+    C[FooterInfo] --> D[settings table + activation + footer output]
+    E[dynamic-multilang] --> F[ml_translations + filters + admin locale]
+    B --> G[Plugin patterns]
+    D --> G
+    F --> G
+```
 
 ## 1. Overview of the Example Plugins
 
@@ -446,7 +455,16 @@ For example:
 
 If you rename a plugin directory, update the slug in the `plugins` table accordingly. The admin scanner will treat the new directory as a new plugin if the old record is not removed.
 
-## 7. Next Steps
+## 7. Operational Checks
+
+- [ ] `hello-word` is treated as a teaching example, not a shipped plugin.
+- [ ] FooterInfo's activation hook compares the slug case-insensitively.
+- [ ] FooterInfo's admin page checks permissions before writing.
+- [ ] Dynamic Multi-Language's filters are registered on `init`.
+- [ ] Example table names do not collide with core tables.
+- [ ] Every example cleans up on uninstall or explicitly documents why it does not.
+
+## 8. Next Steps
 
 After studying the example plugins, you may want to:
 

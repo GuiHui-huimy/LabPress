@@ -10,8 +10,8 @@ The Publications module provides a simple way to maintain a list of papers and j
 
 All publication data is stored in the `publications` table. The admin panel provides a dedicated management page that allows administrators to maintain the list without editing the database directly.
 
-![LabPress ](../assets/contentImag/content/1_1.png)
-> **Administrator Publications Panels**
+![Publications administration page](../assets/contentImag/content/1_1.png)
+> **Figure 1.** The Publications manager. The table is read directly from the `publications` table.
 
 ## 2. Accessing the Publications Manager
 
@@ -21,7 +21,23 @@ Access to this page requires the `publications` permission. Administrator accoun
 
 To open the page, click **Publications** in the sidebar. The page displays a table containing all existing publication entries.
 
-## 3. Understanding the Publication List
+## 3. Publication Workflow at a Glance
+
+```mermaid
+flowchart LR
+    A[Add or Edit modal] --> B[api/save.php<br/>type=publications]
+    B --> C[(publications table)]
+    C --> D[Admin list]
+    C --> E[publications.php]
+    C --> F[Homepage Latest Publications]
+    E --> G[publication_list_title filter]
+    D --> H[Next page load]
+```
+
+The important consequence is that the admin list is not a separate cache. A successful save updates the table; the public page reflects it on the next request.
+
+
+## 4. Understanding the Publication List
 
 The publication list shows the following columns:
 
@@ -34,9 +50,10 @@ The list is ordered by the `sort_order` field, with lower values appearing first
 
 If no publications have been added, the page displays a “No data” message.
 
-![LabPress ](../assets/contentImag/content/1_2.png)
-> **Administrator Publications List**
-## 4. Adding a Publication
+![Publication list with edit and delete actions](../assets/contentImag/content/1_2.png)
+> **Figure 2.** The list view. The **Edit** action opens the same modal used for creation.
+
+## 5. Adding a Publication
 
 To add a new publication:
 
@@ -55,9 +72,23 @@ To add a new publication:
 4. Click **Save**.
 
 The new entry is inserted into the database and immediately appears in the publication list and on the public website.
-![LabPress ](../assets/contentImag/content/1_3.png)
-> **Administrator Publications Add Page**
-## 5. Editing a Publication
+
+![Publication add/edit modal](../assets/contentImag/content/1_3.png)
+> **Figure 3.** The add/edit modal. **Title**, **Authors**, and **Journal** are required; **Link** and **Sort** are optional.
+
+### 5.1 Field behavior and validation
+
+| Field | Required | Behavior |
+| --- | --- | --- |
+| Title | Yes | Trimmed text; HTML is escaped on output. |
+| Authors | Yes | Free text; commas are display separators, not a structured author list. |
+| Journal | Yes | Free text; no journal-name normalization is performed. |
+| Link | No | Stored as a URL; an empty value omits the public action link. |
+| Sort | No | Integer; lower values sort first. Default is `0`. |
+
+The form does not validate DOI syntax or author order. Use a consistent internal convention (for example “Family Name, Given Name”) if the list is consumed by other systems.
+
+## 6. Editing a Publication
 
 To modify an existing publication:
 
@@ -70,7 +101,7 @@ To modify an existing publication:
 The changes are saved immediately and reflected on the frontend after the next page load.
 
 
-## 6. Deleting a Publication
+## 7. Deleting a Publication
 
 To remove a publication:
 
@@ -82,7 +113,7 @@ The entry is permanently removed from the database. There is no undo, so use thi
 
 If a publication should no longer be displayed but you want to keep the record for future use, consider changing its sort order or temporarily removing the public link instead of deleting it.
 
-## 7. Controlling Display Order
+## 8. Controlling Display Order
 
 The display order of publications is controlled by the **Sort** field. Lower values appear first.
 
@@ -98,25 +129,26 @@ When adding several new publications, it is useful to assign sort values in incr
 
 To reorder publications, edit each entry and change its sort value as needed.
 
-## 8. Frontend Display
+## 9. Frontend Display
 
 Publication entries are displayed in two public locations.
 
-### 8.1 Publications Page
+### 9.1 Publications Page
 
 The public **Publications** page lists all publication entries in a simple, readable format. Each entry shows the title, authors, and journal. If an external link is provided, a button labeled **Read** or **Read More** links to the original article or DOI.
 
 The page uses the `publications.php` template and applies the `publication_list_title` filter to each title before rendering. This allows plugins to modify the displayed title if necessary.
 
-### 8.2 Homepage Latest Publications
+### 9.2 Homepage Latest Publications
 
 The homepage also shows a limited number of recent publications in the **Latest Publications** section. The homepage loads publications asynchronously from the API and displays only the first five entries.
 
 The homepage section includes a **View More** button that links to the full Publications page.
 
-![LabPress ](../assets/contentImag/content/1_4.png)
-> **Publications Fronted Page**
-## 9. Multilingual Considerations
+![Publications frontend list](../assets/contentImag/content/1_4.png)
+> **Figure 4.** The public publications page. The title is filtered through `publication_list_title` before output.
+
+## 10. Multilingual Considerations
 
 Publication titles, author lists, and journal names are stored as raw text in the database. The current core does not translate these fields automatically.
 
@@ -127,7 +159,19 @@ If you need to display publications in multiple languages, you have two practica
 
 The Dynamic Multi-Language plugin does not currently provide a dedicated translation tab for publications, but custom translations can be extended through the plugin’s filter system if needed.
 
-## 10. Next Steps
+## 11. Operational Checks
+
+Before considering a publication entry complete:
+
+- [ ] Title, authors, and journal are present.
+- [ ] The external link opens the intended DOI or publisher page.
+- [ ] The sort value follows the site's numbering convention.
+- [ ] The public list shows the entry in the expected position.
+- [ ] The homepage "Latest Publications" block shows the item if it belongs in the newest set.
+
+If a save appears to succeed but the public page does not change, check the response from `api/save.php`, the `publications` table, and any page cache in front of the site. The admin table reads the database directly; a stale public page is usually a caching layer, not a failed insert.
+
+## 12. Next Steps
 
 After managing publications, you may want to continue with:
 

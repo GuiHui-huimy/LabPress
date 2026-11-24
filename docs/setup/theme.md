@@ -8,6 +8,18 @@ LabPress does not ship a theme engine. The frontend is rendered by nine standalo
 
 The visual language is defined through CSS custom properties (`--background`, `--text`, `--accent-teal`, and similar variables) declared per stylesheet, so a site-wide restyle can usually be done by adjusting those variables rather than rewriting selectors.
 
+```mermaid
+flowchart LR
+    A[Frontend entry page] --> B[includes/header.php]
+    A --> C[includes/footer.php]
+    A --> D[Page-specific CSS]
+    B --> E[assets/css/header.css]
+    D --> F[assets/css/index.css]
+    D --> G[projects.css / news.css / tools.css]
+    B --> H[assets/fontawesome]
+    A --> I[assets/js]
+```
+
 ## 2. Stylesheet Layout
 
 | File | Used by |
@@ -34,7 +46,9 @@ Everything else (hero slider, about section, project list, publication list) is 
 
 ## 4. Icons and Fonts
 
-Font Awesome 6 is loaded from a CDN in the page `<head>`. If the site must work without outbound network access, host the icon CSS and webfonts locally and update the `<link>` tags in the entry files.
+Font Awesome 6 is served locally from `assets/fontawesome/`: the CSS is `assets/fontawesome/css/all.min.css` and the webfonts live under `assets/fontawesome/webfonts/`. This keeps the frontend independent of a CDN and makes offline deployments possible.
+
+The public header also contains the account entry and its caret/user icons; those icons use the same Font Awesome set. If icons render as empty boxes, check the CSS/font paths before changing the header markup.
 
 ## 5. Customising a Site
 

@@ -9,8 +9,28 @@ LabPress divides tool management into three related areas:
 - **Version History** – records multiple versions and download links for each tool.
 
 These three areas are accessed through the **Tools** parent menu in the admin sidebar. The following sections describe each area in a practical, task-oriented manner.
-![LabPress ](../assets/contentImag/content/3_1.png)
-> **Administrator Tools Manage Page**
+
+### 1.1 Data model at a glance
+
+The module uses three related tables rather than one large tool record:
+
+```mermaid
+flowchart LR
+    A[Tool List<br/>name, type, summary] --> T[(tools)]
+    B[Tool Detail<br/>description, metadata, citation] --> TD[(tool_details)]
+    C[Version History<br/>changes, downloads] --> TV[(tool_versions)]
+    T --> API[api/data.php<br/>type=tools]
+    TD --> API2[api/data.php<br/>type=tool-detail]
+    TV --> API3[api/data.php<br/>type=tool-versions]
+    API --> FRONT[Tools page / Tool detail page]
+    API2 --> FRONT
+    API3 --> FRONT
+```
+
+A tool can exist without a detail record or version records. The reverse is not true: detail and version rows are attached to a tool identifier. For that reason, create the tool first, then its detail, then its versions.
+
+![Tools administration overview](../assets/contentImag/content/3_1.png)
+> **Figure 1.** The Tools entry in the admin sidebar expands into Tool List, Tool Detail, and Version History.
 
 
 ## 1. Accessing the Tools Module
@@ -40,8 +60,8 @@ The table contains the following columns:
 
 The list is ordered by the `sort_order` field, which you can set when creating or editing a tool. Lower values appear earlier on the frontend.
 
-![LabPress ](../assets/contentImag/content/3_2.png)
-> **Administrator Tools List**
+![Tool list table](../assets/contentImag/content/3_2.png)
+> **Figure 2.** Tool List. The table is the entry point for creating the record that detail and version pages attach to.
 
 ### 2.2 Adding a Tool
 
@@ -66,8 +86,8 @@ To add a new tool:
 4. Click **Save**.
 
 The new tool is inserted into the `tools` table and appears immediately in the tool list and on the public tools page.
-![LabPress ](../assets/contentImag/content/3_3.png)
-> **Administrator Add Tools**
+![Add tool modal](../assets/contentImag/content/3_3.png)
+> **Figure 3.** Add Tool. The detail link can be left as a placeholder until the tool detail page exists.
 
 
 ### 2.3 Editing a Tool
@@ -101,8 +121,8 @@ The **Tool Detail** page allows you to manage the extended information that appe
 When you open **Tools > Tool Detail**, the page displays a dropdown list of all tools. Select a tool from the list to load its current detail information.
 
 If no detail record exists for the selected tool, the form appears empty, and you can create a new detail record by filling in the fields and saving.
-![LabPress ](../assets/contentImag/content/3_4.png)
-> **Administrator Tool Detail**
+![Tool detail selector](../assets/contentImag/content/3_4.png)
+> **Figure 4.** Tool Detail. Select a tool first; the form then loads an existing detail record or starts an empty one.
 
 
 ### 3.2 Tool Detail Fields
@@ -128,8 +148,8 @@ The tool detail form contains the following fields:
 The detailed description supports HTML, allowing you to format paragraphs, lists, headings, and links. You can also include images directly in the HTML content.
 
 To save the detail information, click **Save** at the bottom of the form.
-![LabPress ](../assets/contentImag/content/3_5.png)
-> **Administrator Tool Detail**
+![Tool detail form](../assets/contentImag/content/3_5.png)
+> **Figure 5.** The extended detail form. Field values are stored separately from the tool-list summary.
 
 
 ### 3.3 Updating Tool Details
@@ -146,8 +166,8 @@ When you open **Tools > Version History**, the page displays a dropdown list of 
 
 If the selected tool has no versions, the page displays a message such as “No version records”.
 
-![LabPress ](../assets/contentImag/content/3_6.png)
-> **Administrator Tool version**
+![Version history selector and table](../assets/contentImag/content/3_6.png)
+> **Figure 6.** Version History. The page is tool-scoped after a tool is selected from the dropdown.
 
 
 
@@ -178,8 +198,8 @@ For **Downloads**, you can add multiple download links. Each download entry cont
 Click **Save** to store the version.
 
 
-![LabPress ](../assets/contentImag/content/3_7.png)
-> **Administrator Add Tool version**
+![Add version modal with dynamic changes and downloads](../assets/contentImag/content/3_7.png)
+> **Figure 7.** Add Version. Each change and download is a separate dynamic row; the version number is the user-facing label, not an automatic build counter.
 
 
 ### 4.4 Editing and Deleting Versions
@@ -200,11 +220,11 @@ The tool detail page presents the extended information from the **Tool Detail** 
 
 The frontend loads tool data through the API endpoints. The tool list page fetches data from `api/data.php?type=tools`, while the tool detail page loads `api/data.php?type=tool-detail&name=...` and `api/data.php?type=tool-versions&name=...`.
 
-![LabPress ](../assets/contentImag/content/3_8.png)
-> **Tool List**
+![Public tools list](../assets/contentImag/content/3_8.png)
+> **Figure 8.** The public Tools page. Cards are rendered from the tool list API and link to the detail page.
 
-![LabPress ](../assets/contentImag/content/3_9.png)
-> **Tool Detail**
+![Public tool detail page](../assets/contentImag/content/3_9.png)
+> **Figure 9.** The public tool detail page. Metadata, citation, and version downloads are assembled from separate records.
 
 
 ## 6. Multilingual Considerations
@@ -219,7 +239,18 @@ If you need to present tool information in multiple languages, consider one of t
 
 The plugin system provides the `tool_list_item` filter, which allows developers to modify tool data before it is rendered on the frontend.
 
-## 7. Next Steps
+## 7. Operational Checks
+
+- [ ] Every tool has a unique name and a valid type.
+- [ ] A detail record exists before the public detail link is promoted.
+- [ ] Version numbers follow one convention (for example `1.2.0`, not a mix of `v1.2` and `1.2.0`).
+- [ ] Each download URL is reachable without an admin session.
+- [ ] The tool card and detail page return the same record after a rename.
+- [ ] Deleting a tool has been checked against its detail/version rows in a staging database.
+
+If a detail page returns 404 for a tool that exists in the list, check the detail record's identifier and the `tool-detail` API parameter. If a version is missing, confirm that the selected tool in the dropdown matches the tool that owns the version row.
+
+## 8. Next Steps
 
 After managing tools, you may want to continue with:
 

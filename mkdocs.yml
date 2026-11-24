@@ -64,6 +64,10 @@ extra_css:
   - assets/stylesheets/extra.css
   - material/overrides/assets/stylesheets/home.css
 
+extra_javascript:
+  - assets/javascripts/mermaid.min.js
+  - assets/javascripts/mermaid-init.js
+
 
 
 

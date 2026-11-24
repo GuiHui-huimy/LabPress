@@ -1,48 +1,53 @@
 # Internationalization Overview
 
-This chapter provides a technical overview of the internationalization (i18n) system in LabPress. It explains how the platform supports multiple languages through two complementary mechanisms: static language packs for core interface text and the Dynamic Multi-Language plugin for database-stored content.
+This chapter explains how LabPress separates interface translation from content translation, how the active locale is resolved for the frontend and the admin panel, and how the Dynamic Multi-Language plugin fits into that design.
 
-The chapter is intended for administrators and developers who need to understand how multilingual support works and how to extend it. For detailed instructions on managing translations, refer to the dedicated chapters later in this section.
+The short version is: **core language packs translate code-level strings; Dynamic Multi-Language translates database content; the two layers meet at the `translate` filter.** In v1.1.1 the boundaries are stricter than in earlier releases, which matters when upgrading a plugin or a custom language pack.
 
-## 1. Introduction
+## 1. Architecture at a glance
 
-LabPress is designed from the ground up to support bilingual and multilingual sites. Unlike many lightweight content management systems that hardcode interface text, LabPress uses a centralized translation function and a database-backed translation layer.
+| Layer | Storage | What it translates | Who owns it |
+|-------|---------|--------------------|-------------|
+| Static interface | `languages/{locale}/*.php` | Labels, buttons, validation messages, default template text | Core |
+| Dynamic content | `ml_translations` | Navigation titles, slide text, About Us, research fields, statistic labels | Dynamic Multi-Language |
+| Plugin interface | `plugins/{slug}/languages/{locale}.php` | Strings owned by a plugin | The plugin itself |
 
-This design allows the following:
-
-- The admin panel and frontend can use different language settings.
-- Core interface strings are managed through language files without modifying code.
-- User-generated content, such as navigation menus, slides, and homepage sections, can be translated without duplicating database records.
-- Plugins can provide their own language packs and integrate with the translation system through filters.
-
-The internationalization system consists of three main components:
-
-1. Core language packs stored in `languages/`.
-2. The translation function `__()` and the locale detection function `getLocale()`.
-3. The Dynamic Multi-Language plugin, which handles translations for database-stored content.
-
-## 2. Two-Layer Translation Architecture
-
-LabPress separates translation into two layers that operate independently but share the same filter pipeline.
-
-| Layer | Storage | Content Type | Managed By |
-|-------|---------|--------------|------------|
-| Static strings | PHP files in `languages/{locale}/` | Interface labels, buttons, messages, and default template text | Core language packs |
-| Dynamic content | `ml_translations` database table | Navigation menu titles, slide text, About Us content, research fields, statistics labels, and plugin-specific text | Dynamic Multi-Language plugin |
-
-The static layer covers all text that is part of the application itself. The dynamic layer covers text that is created or edited by site administrators through the admin panel.
-
-Both layers are connected through the `translate` filter. Every string that passes through the `__()` function is filtered, allowing plugins to replace it with a translation when available.
-
-## 3. Core Language Packs
-
-The core language pack system provides the base translation for all interface strings.
-
-### 3.1 Directory Structure
-
-Language packs are stored in the `languages/` directory. Each locale has its own subdirectory, and each module has a separate PHP file within that directory.
-
+```mermaid
+flowchart TD
+    A[Request] --> B{Admin request?}
+    B -->|Yes| C[admin_locale filter]
+    C --> D{Plugin returns valid locale?}
+    D -->|Yes| E[Use admin locale]
+    D -->|No| F[Site default locale]
+    B -->|No| G[Frontend locale resolution]
+    G --> H[lang URL parameter]
+    H --> I[lang cookie]
+    I --> J[Site default locale]
+    E --> K[__ function]
+    F --> K
+    K --> L[languages/locale/module.php]
+    K --> M[plugin:slug language file]
+    K --> N[translate filter]
+    N --> O[Dynamic Multi-Language]
+    L --> P[Rendered page]
+    M --> P
+    O --> P
 ```
+
+Two independent things are being resolved here:
+
+1. **Interface locale** — which language file supplies labels.
+2. **Content locale** — which translation row is used for a database record.
+
+They often share the same code, but they are not the same decision. A visitor can read a Chinese interface with English publication titles, and an administrator can edit English labels while the public site serves Chinese.
+
+## 2. Static language packs
+
+### 2.1 Directory layout
+
+Each locale is a directory under `languages/`, and each module is a PHP file that returns an associative array:
+
+```text
 languages/
 ├── zh_CN/
 │   ├── lang.config
@@ -64,8 +69,9 @@ languages/
     └── publications.php
 ```
 
-The `lang.config` file contains metadata for the language, including its display name, flag, locale code, and text direction. This metadata is used to populate the frontend language switcher and, when the Dynamic Multi-Language plugin is active, the admin language switcher.
-```
+`lang.config` supplies the display metadata used by both language switchers:
+
+```php
 <?php
 // languages/en_US/lang.config
 return [
@@ -74,177 +80,210 @@ return [
     'flag'      => '🇺🇸',
     'direction' => 'ltr',
 ];
-
 ```
-Each language file returns an associative array of translation keys. The keys may use dot notation to represent nested arrays, allowing related strings to be grouped together.
 
-### 3.2 The Translation Function
+The directory name is authoritative: `getAvailableLanguages()` overwrites `locale` with the directory name. A mismatch between the directory and the `locale` field in `lang.config` will therefore not create a second locale, but it will confuse anyone reading the metadata.
 
-The core translation function is `__()`. It accepts two parameters:
+Language files return arrays. Dot notation addresses nested keys; for example, `nav.home` means `['nav' => ['home' => ...]]`.
+
+### 2.2 The `__()` function
 
 ```php
 __($key, $module = 'common');
 ```
 
-- `$key` is the translation key, such as `about_us_title` or `nav.home`.
-- `$module` is the module name, corresponding to a PHP file in the current locale directory.
+- `$key` is the lookup key.
+- `$module` selects a core module file or an explicit plugin language file.
 
-When `__()` is called, it loads the requested language file on demand and returns the translated string. If the key is not found, the key itself is returned as a fallback, ensuring that missing translations do not produce empty output.
-
-The function is used throughout both the admin panel and the frontend templates. For example:
+The function loads `common` first, then the requested core module on demand, and caches loaded modules for the request. Missing keys return the key itself, so a broken translation does not blank out the interface.
 
 ```php
 echo __('about_us_title', 'index');
 ```
 
-This call loads `languages/en_US/index.php` if the current locale is `en_US` and returns the value associated with `about_us_title`.If you want know more detail about core translation function`__()`[Core Language Packs](core-lang.md) 
-
-### 3.3 Module Loading and Fallback
-
-Module loading is performed lazily. Only the `common` module is loaded automatically on the first translation call. Other modules are loaded when they are explicitly requested.
-
-This approach keeps memory usage low, because unused modules are never loaded. The system caches loaded modules within a single request to avoid repeated file inclusion.
-
-If a requested module does not exist, the function returns the original key. No error is raised, which makes the system resilient to missing language files.
-
-## 4. Language Switching
-
-Language selection is handled differently for the frontend and the backend.
-
-### 4.1 Frontend Language Selection
-
-The frontend language is determined by `getLocale()`, which checks three sources in priority order:
-
-1. The `lang` URL parameter.
-2. The `lang` cookie.
-3. The site default language stored in `site_config`.
-
-If a visitor explicitly selects a language using the language switcher in the header, the choice is stored in a cookie and takes effect on subsequent page loads.
-
-The frontend language switcher is rendered automatically if more than one language is available. It displays the available languages and lets users switch without affecting the admin panel language.
-
-### 4.2 Backend Language Policy
-
-By default, the backend uses the site default language and ignores the frontend language cookie or URL parameter. This ensures that a fresh installation has a predictable, single-language admin interface.
-
-The `getLocale()` function detects whether the current request is for an admin page by checking the `IS_ADMIN` constant or the script path. In the admin branch it applies the `admin_locale` filter to the site default language. If no plugin handles that filter, the default locale is returned unchanged.
-
-The Dynamic Multi-Language plugin uses this filter to provide an independent admin language preference. Its language switcher is rendered in the admin topbar and on the login page; the selected locale is stored in a session value and a dedicated `ml_admin_locale` cookie. This preference is separate from the frontend `lang` cookie, so an administrator can keep the backend in English while visitors browse the frontend in Chinese, or vice versa.
-
-If the plugin is deactivated or removed, the `admin_locale` filter has no callback and the backend automatically falls back to the site default language. No core page depends on the plugin being present.
-
-### 4.3 Available Languages
-
-The list of available languages is discovered automatically by scanning the `languages/` directory. The `getAvailableLanguages()` function reads each subdirectory’s `lang.config` file and builds an array of metadata.
-
-Adding a new language to the system is therefore as simple as creating a new directory with a valid `lang.config` file and the required language files. The new language will appear in the frontend language switcher without code changes. The admin switcher picks it up only when the Dynamic Multi-Language plugin is active, because that switcher is provided by the plugin.
-
-## 5. Dynamic Multi-Language Plugin
-
-The Dynamic Multi-Language plugin extends the core i18n system to handle database-stored content.
-
-### 5.1 Purpose
-
-Core language files can translate only strings that exist in the codebase. They cannot translate content that administrators type into the admin panel, such as navigation menu titles, slide descriptions, or the About Us text.
-
-The Dynamic Multi-Language plugin solves this problem by providing a translation management interface for database content. It allows administrators to enter translations for all user-editable text without touching the database directly.
-
-### 5.2 How It Works
-
-The plugin registers itself on the `init` hook and then adds filters to the LabPress hook system.
-
-The most important filter is `translate`. Whenever a string passes through the `__()` function, the plugin checks whether a translation exists in the `ml_translations` table for the current locale. If a translation is found, it replaces the original string.
-
-The plugin also registers filters on specific data points, such as `nav_menu_item` for menu items and `slides_data` for slide data. This allows it to translate structured content that is not processed through `__()`.
-
-### 5.3 Translation Storage
-
-Translations are stored in the `ml_translations` table. Each row contains:
-
-| Column | Description |
-|--------|-------------|
-| `table_name` | The logical source of the original string, such as `nav_menu`, `slides`, `site_config`, or `__custom` |
-| `record_id` | The unique identifier of the original record or the original string itself |
-| `field_name` | The field within the record, such as `title` or `description` |
-| `locale` | The target language code |
-| `translated_value` | The translated text |
-
-A unique constraint on `table_name`, `record_id`, `field_name`, and `locale` prevents duplicate translations.
-
-### 5.4 Admin Interface
-
-The plugin adds a new admin page under the sidebar with the title **Dynamic Multi-Language**. This page organizes translations into several tabs:
-
-- **Nav Menus** – translate header and footer menu titles.
-- **Slides** – translate slide titles and descriptions.
-- **About / Research** – translate the About Us text, research title, and research subtitle.
-- **Dynamic Content** – translate statistics labels and research direction card texts.
-- **Plugin Language** – translate the plugin’s own interface strings.
-
-The page also includes a source locale selector. The source locale defines the language in which the original content is written. Translations are then managed for all other available languages.
-
-
-![LabPress ](../assets/contentImag/Gettingstart/3_4.png)
-> **Dynamic Multi-Language Admin Page**
-
-## 6. Frontend and Backend Decoupling
-
-One of the key design goals of the i18n system is to keep the frontend and backend language contexts completely separate.
-
-The backend uses the site default language so that administrators can work with a consistent interface. The frontend respects visitor language preferences. This separation is implemented in `getLocale()` and is independent of content translation.
-
-The backend can optionally expose an independent language preference through the `admin_locale` filter. The Dynamic Multi-Language plugin implements that filter and renders a switcher in the login page and admin topbar; if the plugin is absent, `getLocale()` returns the site default language.
-
-Because the Dynamic Multi-Language plugin skips dynamic-content translation when the current request is an admin page, the admin interface always shows the original database content. This prevents administrators from being confused by translated values when editing the site.
-
-## 7. Plugin Language Support
-
-Plugins can provide their own language files and participate in the translation system.
-
-### 7.1 Explicit Loading Only
-
-Plugin language files are not merged into the core namespace automatically. Plugin code must request its own language module explicitly:
+This reads `languages/{locale}/index.php`. For a plugin-owned string, the module must be `plugin:{slug}`:
 
 ```php
 __('ml_plugin_name', 'plugin:dynamic-multilang');
 ```
 
-The plugin language files are stored in the plugin's `languages/` directory and follow the same naming convention as core language files, for example `zh_CN.php` and `en_US.php`.
+The plugin branch reads `plugins/dynamic-multilang/languages/{locale}.php` directly and looks up the key inside that file. It does not merge the plugin array into the core namespace.
 
-### 7.2 Why Explicit Loading
+### 2.3 What changed in 1.1.1
 
-Because plugin language keys can conflict with core keys, LabPress requires the explicit `plugin:` module prefix. This instructs the translation function to load the language file from the specified plugin only, avoiding global key conflicts. Plugin developers should still use unique key prefixes, such as `ml_`, `fi_`, or a plugin-specific abbreviation, even when using explicit loading.
+Before 1.1.1, core `__()` merged active plugin language files into the core lookup. That made plugin strings appear to work without a module prefix, but it also created collisions and made deactivation behavior unpredictable.
 
-## 8. Extending Internationalization
+In 1.1.1:
 
-The i18n system can be extended in several ways.
+- core modules are loaded from `languages/{locale}/{module}.php`;
+- plugin modules must use `plugin:{slug}`;
+- only the requested plugin file is parsed;
+- a missing plugin file returns the key and records the path in `$GLOBALS['lp_i18n_missing']` when `LABPRESS_DEBUG` is on.
 
-### 8.1 Adding a New Language
+If an upgrade suddenly shows raw keys such as `ml_plugin_name`, the first check is the second argument of `__()`. It is almost always missing the `plugin:` prefix.
 
-To add a new language, create a new subdirectory under `languages/` with a valid `lang.config` file and the required language files. The language will automatically appear in the frontend language switcher. The admin switcher is plugin-provided, so it lists the new language only while the Dynamic Multi-Language plugin is active.
+## 3. Locale resolution
 
-Core modules should be translated and placed in the new locale directory. Active plugins may also need language files in their own `languages/` directories.
+### 3.1 Frontend precedence
 
-### 8.2 Using Hooks
+`getLocale()` resolves the frontend locale once per request and caches it in a static variable:
 
-Developers can modify translation behavior through the LabPress hook system. Relevant hooks include:
+```mermaid
+flowchart TD
+    A[getLocale] --> B{lang in URL and available?}
+    B -->|Yes| C[Use URL value and set lang cookie]
+    B -->|No| D{lang cookie valid?}
+    D -->|Yes| E[Use cookie value]
+    D -->|No| F[Use site_config.language]
+    C --> G[Return locale]
+    E --> G
+    F --> G
+```
 
-| Hook | Type | Description |
-|------|------|-------------|
-| `translate` | Filter | Applied to all translated strings. Can be used to implement custom translation logic. |
-| `nav_menu_item` | Filter | Applied to each rendered menu item. Used for menu title translation. |
-| `slides_data` | Filter | Applied to slide data before output. Used for slide translation. |
-| `stat_value` | Filter | Applied to statistics values before output. |
-| `page_title_full` | Filter | Applied to the final page title string. |
-| `admin_locale` | Filter | Applied to the backend default locale; plugins can return a valid locale to override it. |
+The URL value wins because it represents an explicit, immediate request. A valid `lang` parameter also writes a 30-day cookie, so the choice survives navigation. Invalid values are ignored rather than stored.
 
-Plugin developers can register additional filters to support translation for custom content types.
+The frontend language switcher is rendered in `includes/header.php` when more than one locale is available. It changes the interface locale; it does not change stored content by itself.
 
-## 9. Next Steps
+### 3.2 Admin precedence
 
-This overview introduced the components and architecture of the LabPress internationalization system. For practical guidance, continue with:
+An admin request is detected by `IS_ADMIN` or by `/admin/` in the script path. The admin branch does not read the frontend `lang` cookie or URL parameter. It applies the `admin_locale` filter to the site default locale:
 
-- [Core Language Packs](core-lang.md) – details about language file structure and the `__()` function.
-- [Dynamic Multi-Language Plugin](dynamic-multilang.md) – instructions for managing database content translations.
-- [Plugin Development](../plugins-dev/intro.md) – how to create plugins with their own language support.
-- [Hooks Reference](../plugins-dev/hooks-reference.md) – complete list of available filters and actions.
+```php
+$adminLocale = LabPress_Hooks::applyFilters('admin_locale', $defaultLocale, $availLocales);
+```
+
+The return value must be a string present in `$availLocales`; otherwise `getLocale()` falls back to the site default. This validation is the reason a plugin cannot accidentally force an unavailable locale.
+
+The Dynamic Multi-Language plugin implements the filter with `ml_admin_locale`, backed by a session value and a dedicated cookie. The login page and admin topbar render the switcher. Deactivating the plugin removes the callback, and the admin panel returns to the site default without any core code change.
+
+![Admin interface switched to English while the site keeps its content locale](../assets/contentImag/Gettingstart/v111-dashboard-en.png)
+> **Figure 1.** The same v1.1.1 installation with the admin interface switched to English. The account chip and **中文 / English** switcher live in the topbar.
+
+The order matters: `getLocale()` is called after `loadPlugins()` at the end of `includes/functions.php`, so plugin filters are registered before the first admin locale resolution.
+
+### 3.3 Available languages
+
+`getAvailableLanguages()` scans `languages/` and includes every subdirectory with a readable `lang.config`. The result feeds:
+
+- the site language dropdown in **Settings → Site Config**;
+- the frontend language switcher;
+- the admin switcher, when the plugin is active;
+- validation of URL and cookie locale values.
+
+A locale directory without `lang.config` is invisible to all four. A locale with a config but missing module files is selectable, but missing keys fall back to the key name. This is why adding a language is a two-part job: register the metadata and translate the modules actually used by the site.
+
+## 4. Dynamic content translation
+
+### 4.1 Why a second layer exists
+
+Core language files cannot translate text that an administrator types into the database. Navigation titles, slide captions, the About Us paragraph, statistic labels, and research card text are data, not code.
+
+Dynamic Multi-Language stores translations in `ml_translations` and applies them at render time. The source record is not duplicated per language, which keeps editing and permissions simple.
+
+### 4.2 Storage model
+
+| Column | Meaning |
+|--------|---------|
+| `table_name` | Logical source: `nav_menu`, `slides`, `site_config`, or `__custom` |
+| `record_id` | Source record identifier, or the original string for custom keys |
+| `field_name` | Field within the record, such as `title` or `description` |
+| `locale` | Target locale |
+| `translated_value` | Translated text |
+
+The unique constraint on `(table_name, record_id, field_name, locale)` prevents duplicate rows. A missing row means “no translation”, not “empty translation”; the plugin falls back to the source value.
+
+### 4.3 Render pipeline
+
+```mermaid
+sequenceDiagram
+    participant Page as Template
+    participant Core as __() / hook
+    participant ML as Dynamic Multi-Language
+    participant DB as ml_translations
+    Page->>Core: request label or data
+    Core->>ML: translate filter
+    ML->>DB: lookup table_name + record_id + field + locale
+    alt row exists
+        DB-->>ML: translated_value
+        ML-->>Core: translated string
+    else no row
+        ML-->>Core: original value
+    end
+    Core-->>Page: rendered text
+```
+
+Structured values use dedicated filters instead of the generic `translate` filter:
+
+- `nav_menu_item` for menu rows;
+- `slides_data` for slide arrays;
+- `stat_value` for statistic values;
+- `page_title_full` for the final title.
+
+The plugin also skips dynamic-content translation on admin requests. The editor therefore sees the source values it is editing, not the public translation.
+
+### 4.4 Admin interface
+
+The plugin adds a **Dynamic Multi-Language** page with tabs for navigation, slides, About/Research, dynamic content, and plugin interface strings. A source locale selector defines which language the stored values are written in.
+
+![Dynamic Multi-Language admin page](../assets/contentImag/Gettingstart/3_4.png)
+> **Figure 2.** The translation workspace. The source locale is selected once; target locales are edited per field. This capture predates the v1.1.1 visual refresh; the stored workflow and tabs are unchanged.
+
+## 5. Plugin interface translation
+
+A plugin has two independent translation responsibilities:
+
+1. Its **interface strings**, loaded through `plugin:{slug}`.
+2. Its **content translations**, if it owns database fields, registered through the plugin's own filters or through Dynamic Multi-Language.
+
+Keeping these separate avoids the common mistake of putting UI labels into `ml_translations`. UI labels belong in `plugins/{slug}/languages/{locale}.php`; content belongs in the database.
+
+Plugin language files use the same array shape as core files, but they are not merged globally. A plugin should also namespace its keys (`ml_`, `fi_`, etc.) because two plugins could otherwise use the same key inside their own files without any warning.
+
+## 6. Extending the system
+
+### 6.1 Add a locale
+
+1. Create `languages/{locale}/`.
+2. Add `lang.config` with `name`, `locale`, `flag`, and `direction`.
+3. Copy the core module files that the site actually uses.
+4. Translate values, not keys.
+5. Reload **Settings → Site Config** and confirm the locale appears.
+6. If Dynamic Multi-Language is active, confirm the admin switcher lists it.
+
+The locale appears in switchers automatically; no code registration is required.
+
+### 6.2 Add a plugin string
+
+1. Create `plugins/{slug}/languages/zh_CN.php` and `en_US.php`.
+2. Return an array from each file.
+3. Call `__('key', 'plugin:{slug}')`.
+4. Confirm the raw key is not rendered when a translation is missing.
+
+### 6.3 Hook reference
+
+| Hook | Type | Use |
+|------|------|-----|
+| `translate` | Filter | Last chance to replace any translated string |
+| `nav_menu_item` | Filter | Translate a menu row before rendering |
+| `slides_data` | Filter | Translate slide arrays before output |
+| `stat_value` | Filter | Translate statistic values |
+| `page_title_full` | Filter | Adjust the final page title |
+| `admin_locale` | Filter | Choose the admin interface locale |
+
+## 7. Operational checks
+
+- [ ] Switching the frontend language changes labels but not the admin language.
+- [ ] `?lang=zh_CN` sets a cookie and survives the next request.
+- [ ] The admin login page shows the language switcher only when the plugin is active.
+- [ ] The admin URL and `<html lang>` agree after switching.
+- [ ] Plugin strings use `plugin:{slug}` and disappear cleanly on deactivation.
+- [ ] A missing translation returns readable source text, not a blank.
+- [ ] `ml_translations` has no duplicate rows for the same field and locale.
+- [ ] The source locale is set correctly before translators begin.
+
+## 8. Next steps
+
+- [Core Language Packs](core-lang.md) — file-level details and the `__()` contract.
+- [Dynamic Multi-Language Plugin](dynamic-multilang.md) — translation workflow and database behavior.
+- [Plugin Development](../plugins-dev/intro.md) — packaging and lifecycle.
+- [Hooks Reference](../plugins-dev/hooks-reference.md) — complete filter and action list.

@@ -10,8 +10,8 @@ The Slides module controls the homepage carousel. Each slide consists of an imag
 
 All slide data is stored in the `slides` table. The admin panel provides a dedicated management page that allows administrators to maintain the carousel content without editing the database directly.
 
-![LabPress ](../assets/contentImag/content/2_1.png)
-> **Administrator Slides Panels**
+![Slides administration page](../assets/contentImag/content/2_1.png)
+> **Figure 1.** The Slides manager. Each row corresponds to one carousel record.
 
 ## 2. Accessing the Slides Manager
 
@@ -21,7 +21,23 @@ Access to this page requires the `slides` permission. Administrator accounts wit
 
 To open the page, click **Slides** in the sidebar. The page displays a table containing all existing slides.
 
-## 3. Understanding the Slide List
+## 3. Slide Workflow at a Glance
+
+```mermaid
+flowchart LR
+    A[Add or Edit modal] --> B[api/upload.php]
+    B --> C[uploads/slides/]
+    A --> D[api/save.php<br/>type=slides]
+    D --> E[(slides table)]
+    E --> F[index.php carousel]
+    E --> G[api/data.php?type=slides]
+    G --> F
+```
+
+The slide record stores the image path, title, description, and sort order. The carousel uses the API as its data source; the static markup in `index.php` is only a fallback for an empty or unavailable API response.
+
+
+## 4. Understanding the Slide List
 
 The slide list shows the following columns:
 
@@ -31,9 +47,9 @@ The slide list shows the following columns:
 
 The list is ordered by the `sort_order` field, with lower values appearing first in the carousel. If no slides have been added, the page displays a “No data” message.
 
-![LabPress ](../assets/contentImag/content/2_2.png)
-> **Administrator Slides List Panels**
-## 4. Adding a Slide
+![Slides list with thumbnail previews](../assets/contentImag/content/2_2.png)
+> **Figure 2.** The list view. Thumbnails are loaded from the stored image path; a missing file produces a broken preview.
+## 5. Adding a Slide
 
 To add a new slide:
 
@@ -52,7 +68,7 @@ To add a new slide:
 
 The new slide is inserted into the database and will appear in the homepage carousel after the next page load.
 
-### 4.1 Uploading a Slide Image
+### 5.1 Uploading a Slide Image
 
 The slide form includes an image upload field. When you select an image file, the browser uploads it to the server through the `api/upload.php` endpoint.
 
@@ -65,10 +81,10 @@ The upload process:
 
 Supported image types include JPG, PNG, GIF, and WebP. The maximum file size is determined by the server’s PHP configuration.
 
-![LabPress ](../assets/contentImag/content/2_3.png)
-> **Administrator Add Slides**
+![Add slide modal with image upload](../assets/contentImag/content/2_3.png)
+> **Figure 3.** The add form. Uploading an image writes to `uploads/slides/` and stores the returned path in the form.
 
-## 5. Editing a Slide
+## 6. Editing a Slide
 
 To modify an existing slide:
 
@@ -79,10 +95,10 @@ To modify an existing slide:
 5. Click **Save**.
 
 If you need to replace the existing image, use the file picker to upload a new image. The new image will replace the previous one after saving.
-![LabPress ](../assets/contentImag/content/2_4.png)
-> **Administrator Edit Slides**
+![Edit slide modal](../assets/contentImag/content/2_4.png)
+> **Figure 4.** The edit form. Replacing the image only changes the record after the modal is saved.
 
-## 6. Deleting a Slide
+## 7. Deleting a Slide
 
 To remove a slide:
 
@@ -94,7 +110,7 @@ The slide is permanently removed from the database. The image file itself may re
 
 If you want to temporarily hide a slide without deleting it, consider changing its sort order to a very high value or replacing its content later, as there is currently no separate active/inactive switch in this module.
 
-## 7. Controlling Slide Order
+## 8. Controlling Slide Order
 
 The order of slides is controlled by the **Sort** field. Lower values appear earlier in the carousel.
 
@@ -106,7 +122,7 @@ SELECT id, image, title, description FROM slides ORDER BY sort_order ASC
 
 The carousel then cycles through the slides in this order. To rearrange slides, edit each slide and adjust its sort value. It is recommended to use increments of ten (10, 20, 30, etc.) so that future insertions are easier.
 
-## 8. Frontend Display
+## 9. Frontend Display
 
 The homepage carousel is rendered by `index.php` and the JavaScript file `assets/js/index.js`.
 
@@ -115,10 +131,10 @@ The frontend attempts to load slide data asynchronously from the API endpoint `a
 Each slide is displayed with its title and description overlaid on the background image. The carousel automatically advances every few seconds and includes navigation indicators that users can click to jump to a specific slide.
 
 If the API request fails or no slides are found, the frontend falls back to the static slides defined in the homepage HTML. However, the static slides are only a fallback and should not be relied upon for production content.
-![LabPress ](../assets/contentImag/content/2_5.png)
-> **Index  Slides**
+![Homepage slide carousel](../assets/contentImag/content/2_5.png)
+> **Figure 5.** The frontend carousel. The API supplies slide data; the carousel advances automatically and supports indicator navigation.
 
-## 9. Multilingual Support
+## 10. Multilingual Support
 
 Slide titles and descriptions are stored as raw text in the database. The Dynamic Multi-Language plugin can translate these fields without modifying the original content.
 
@@ -132,10 +148,20 @@ To manage slide translations:
 4. Save the translations.
 
 When the frontend language is switched, the translated slide content appears automatically.
-![LabPress ](../assets/contentImag/content/2_6.png)
-> **Dynamic Multi-Language of Slides**
+![Slide translation tab in Dynamic Multi-Language](../assets/contentImag/content/2_6.png)
+> **Figure 6.** Slide titles and descriptions are edited in the plugin's Slides tab; the original record remains untouched.
 
-## 10. Next Steps
+## 11. Operational Checks
+
+- [ ] Every slide has a readable image path under `uploads/slides/`.
+- [ ] The title and description fit the carousel overlay at mobile and desktop widths.
+- [ ] The sort order is unique enough that the intended first slide is deterministic.
+- [ ] The API returns the same number of slides as the admin list.
+- [ ] The static fallback is not being mistaken for live content.
+
+If the carousel shows old content after saving, check the browser cache and any page cache before changing the database. If it shows no slides, request `api/data.php?type=slides` directly and inspect the JSON response.
+
+## 12. Next Steps
 
 After managing slides, you may want to continue with:
 

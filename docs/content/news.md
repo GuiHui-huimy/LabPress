@@ -11,8 +11,24 @@ The News module stores each announcement as a record containing a title, summary
 Each news item can include a featured image that appears alongside the summary in the list and at the top of the detail page. The content field supports Markdown, allowing you to format paragraphs, headings, lists, links, and code blocks without writing HTML.
 
 All news data is stored in the `news` table. The admin panel provides a dedicated management page for maintaining news entries.
-![LabPress ](../assets/contentImag/content/5_1.png)
-> **Administrator News Manage Page**
+
+### 1.1 Data and publishing workflow
+
+```mermaid
+flowchart LR
+    A[Add or Edit News modal] --> B[Markdown content]
+    B --> C[api/save.php<br/>type=news]
+    C --> D[(news table)]
+    D --> E[news.php list]
+    D --> F[news-detail.php]
+    E --> G[news_list_title / news_list_summary filters]
+    F --> H[the_content filter]
+```
+
+The list page and the detail page both read the same record. There is no separate “draft” state in the current module: saving a news item makes it part of the public list immediately.
+
+![News administration page](../assets/contentImag/content/5_1.png)
+> **Figure 1.** The Research News manager. The list is ordered by date and then sort value.
 
 ## 2. Accessing the News Manager
 
@@ -33,8 +49,8 @@ The news list shows the following columns:
 The list is sorted by date descending and then by the sort order field. This means the most recent news appears at the top. The public news page follows the same ordering rule.
 
 If no news entries have been added, the page displays a “No data” message.
-![LabPress ](../assets/contentImag/content/5_2.png)
-> **Administrator News  List**
+![News list with date ordering](../assets/contentImag/content/5_2.png)
+> **Figure 2.** News list. The newest date is not automatically the top item when another item has a stronger sort value in the same date group.
 ## 4. Adding a News Item
 
 To add a new news item:
@@ -72,8 +88,8 @@ Common formatting examples include:
 
 The public news detail page automatically converts Markdown to HTML when displaying the content.
 
-![LabPress ](../assets/contentImag/content/5_3.png)
-> **Administrator News  Markdown Editor**
+![News Markdown editor](../assets/contentImag/content/5_3.png)
+> **Figure 3.** The Markdown editor in the news modal. Formatting is stored as Markdown and converted by Parsedown on the detail page.
 
 ### 4.2 Uploading a News Image
 
@@ -98,8 +114,8 @@ To modify an existing news item:
 5. Click **Save**.
 
 The changes are saved immediately and reflected on the public website after the next page load.
-![LabPress ](../assets/contentImag/content/5_4.png)
-> **Administrator News  Markdown Editor**
+![Edit news item](../assets/contentImag/content/5_4.png)
+> **Figure 4.** Editing an existing item. The current Markdown and image path are loaded into the same modal.
 ## 6. Deleting a News Item
 
 To remove a news item:
@@ -135,8 +151,8 @@ The public **Research News** page lists all news entries. Each entry shows:
 - A “Read More” button linking to the full article.
 
 The list is rendered by `news.php` and uses the `news_list_title` and `news_list_summary` filters before output. This allows plugins to modify the displayed text if needed.
-![LabPress ](../assets/contentImag/content/5_5.png)
-> **Friontend  News  List**
+![Frontend news list](../assets/contentImag/content/5_5.png)
+> **Figure 5.** The public news list. Images, titles, authors, dates, and summaries are rendered from the same record.
 
 ### 8.2 News Detail Page
 
@@ -144,8 +160,8 @@ Clicking a news title opens the detail page. This page displays the full Markdow
 
 The detail page applies the `page_title` filter to the news title and the `the_content` filter to the rendered Markdown content. These filters allow plugins such as Dynamic Multi-Language or custom plugins to modify the output.
 
-![LabPress ](../assets/contentImag/content/5_6.png)
-> **Friontend  News  Detail**
+![Frontend news detail](../assets/contentImag/content/5_6.png)
+> **Figure 6.** The public detail page. The Markdown body is rendered to HTML and filtered through `the_content`.
 
 ## 9. Multilingual Considerations
 
@@ -159,7 +175,18 @@ If your site needs news in multiple languages, consider these options:
 
 The Dynamic Multi-Language plugin does not currently provide a dedicated translation tab for news content, but its filter system can be extended to support news fields if needed.
 
-## 10. Next Steps
+## 10. Operational Checks
+
+- [ ] Title, date, summary, and Markdown body are all present before publishing.
+- [ ] The date is in the expected time zone and format.
+- [ ] Images exist under `uploads/news/` and are readable.
+- [ ] The detail page renders Markdown links and code blocks correctly.
+- [ ] The list ordering matches the intended date/sort policy.
+- [ ] The item is not being cached with an older version on the frontend.
+
+If a news item is missing from the public list, check the date value and the query limit before assuming a failed save. If the detail page is empty, inspect the stored `content` field and confirm that Markdown is being passed to Parsedown.
+
+## 11. Next Steps
 
 After managing research news, you may want to continue with:
 

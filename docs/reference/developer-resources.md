@@ -8,6 +8,19 @@ The page is intended as a starting point rather than a replacement for the more 
 
 LabPress is written in plain PHP and MySQL, with no external PHP framework or dependency manager. Development follows a simple flat-file structure, and the system can be run locally with only a web server, PHP, and MySQL installed.
 
+```mermaid
+flowchart TD
+    A[Entry page or admin view] --> B[includes/config.php]
+    B --> C[includes/functions.php]
+    C --> D[includes/hooks.php]
+    C --> E[includes/labpress.php]
+    C --> F[(MySQL)]
+    D --> G[Active plugins]
+    E --> F
+    G --> H[Filters and actions]
+    H --> A
+```
+
 The following resources are most relevant to developers:
 
 - Source code on GitHub
@@ -56,13 +69,13 @@ Ensure the following are available:
 
 ### 3.2 Create the Configuration File
 
-Copy the default configuration template and edit it for the local environment.
+Copy the sample configuration to the active configuration path:
 
 ```bash
-cp includes/config.php includes/config.php.bak
+cp includes/config-sample.php includes/config.php
 ```
 
-Then update `includes/config.php` with the local database credentials. Do not commit the modified file to version control if it contains real passwords.
+Then update `includes/config.php` with the local database credentials. `includes/config.php` is environment-specific and should not be committed when it contains real passwords. Keep `includes/config-sample.php` as the shareable template.
 
 ### 3.3 Import the Sample Database
 
@@ -314,7 +327,18 @@ For general bugs and feature requests, use the GitHub issue tracker.
 
 For security vulnerabilities, follow the process described in `SECURITY.md`. Do not disclose security issues publicly before they have been addressed.
 
-## 11. Next Steps
+## 11. Operational Checks
+
+- [ ] `includes/config-sample.php` exists and `includes/config.php` is local-only.
+- [ ] The PHP extensions listed in section 3.1 are enabled.
+- [ ] The sample dump imports without a collation error.
+- [ ] The default password is changed before any non-local exposure.
+- [ ] `php -l` passes on every modified PHP file.
+- [ ] Login, permissions, uploads, plugins, and language switching are tested manually.
+- [ ] Debug output is removed before commit.
+- [ ] The documentation is updated when a user-facing behavior changes.
+
+## 12. Next Steps
 
 After reviewing the developer resources, you may want to continue with:
 

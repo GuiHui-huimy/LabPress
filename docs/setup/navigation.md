@@ -11,11 +11,31 @@ LabPress supports two independent menu locations:
 - **Header navigation** – displayed in the main navigation bar on every public page.
 - **Footer links** – displayed in the footer area.
 
-Both locations are managed from a single admin page: **Settings > Menu Settings** (or **Settings > Navigation Menus** depending on the current translation).
+Both locations are managed from a single admin page: **Settings → Menu Settings**.
 
 Menu items are stored in the `nav_menu` table and can be created, edited, reordered, and removed directly from the admin panel. The menu system is designed to be lightweight and does not rely on a separate configuration file.
 
-> **截图占位**：此处可插入 **Settings > Menu Settings** 页面完整截图，展示头部菜单和页脚链接两个区域，建议尺寸 1280×800。
+### 1.1 What is stored in a menu item
+
+A menu record has a title, URL, target, sort order, active flag, and location. The header and footer share one table; the `location` column separates them. The public header additionally renders two things that are **not** menu records:
+
+- the language switcher, when more than one locale pack exists;
+- the account entry, which changes from **Sign in** to the signed-in username.
+
+```mermaid
+flowchart LR
+    A[Settings → Menu Settings] --> B[api/save.php<br/>type=nav-menus]
+    B --> C[(nav_menu)]
+    C --> D[getNavMenus]
+    D --> E[includes/header.php]
+    D --> F[includes/footer.php]
+    G[Session user] --> H[Account entry]
+    H --> E
+    I[Available locales] --> J[Language switcher]
+    J --> E
+```
+
+The account entry is not editable through the menu table. It is rendered by `includes/header.php` and controlled by session state and permissions.
 
 ## 2. Database Table Structure
 
@@ -36,7 +56,7 @@ The `parent_id` column is present for future support of nested menus. The curren
 
 ## 3. Access and Permissions
 
-The menu settings page is available under **Settings > Menu Settings** in the admin sidebar.
+The menu settings page is available under **Settings → Menu Settings** in the admin sidebar.
 
 Access to this page requires the `all` permission. The permission check is implemented at the beginning of the view file:
 
@@ -82,7 +102,7 @@ Footer links are managed in the same way as header menus and share the same data
 
 To add a new menu item:
 
-1. Open **Settings > Menu Settings**.
+1. Open **Settings → Menu Settings**.
 2. Locate the appropriate section, either **Header Navigation** or **Footer Links**.
 3. Click **Add Header Menu** or **Add Footer Link**.
 4. In the modal form, fill in the following fields:
@@ -109,7 +129,17 @@ The edit form includes a hidden field for the item ID. When saved, the existing 
 
 The **Delete** button in each row removes the item after confirmation. The corresponding API request uses the `delete` action for the `nav-menus` type and removes the record by its ID.
 
-> **截图占位**：此处可插入新增或编辑菜单项弹窗截图，展示 Title、URL、Open In、Sort、Enabled 等字段，建议尺寸 800×600。
+### 4.6 Account entry in the header
+
+The header navigation contains an account slot after the menu items and language switcher. It is not a `nav_menu` record.
+
+- When no user session exists, the slot renders a **Sign in** link to `admin/login.php?redirect=home`.
+- When `$_SESSION['user']` exists, the slot renders the username.
+- Clicking the username opens `admin/index.php`.
+- Hovering or keyboard-focusing the username reveals shortcuts for **Dashboard**, **Publications**, **Projects**, **Tools**, and **Research News**.
+- Shortcut items are omitted when the user lacks the corresponding permission.
+
+The login link is safe to expose publicly: it points to the admin login and only returns to the homepage for the exact allow-listed `redirect=home` value. It does not accept arbitrary return URLs.
 
 ## 5. Save and Delete Workflow
 
@@ -212,7 +242,7 @@ For a complete reference of available hooks, see [Hooks Reference](../plugins-de
 
 The following example shows how to add an external publication link to the footer.
 
-1. Open **Settings > Menu Settings**.
+1. Open **Settings → Menu Settings**.
 2. In the **Footer Links** section, click **Add Footer Link**.
 3. Fill in the form:
    - **Title**: `PubMed`

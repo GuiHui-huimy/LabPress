@@ -30,6 +30,16 @@ The database contains the following tables:
 | `footer_info` | Stores configuration for the FooterInfo plugin. |
 | `ml_translations` | Stores dynamic translations used by the Dynamic Multi-Language plugin. |
 
+```mermaid
+erDiagram
+    project_categories ||--o{ projects : contains
+    tools ||--o| tool_details : describes
+    tools ||--o{ tool_versions : releases
+    nav_menu ||--o{ nav_menu : parents
+```
+
+The diagram shows the enforced foreign-key relationships. `site_config` and `ml_translations` are application-level sidecars rather than foreign-key targets; the table sections below are authoritative for column types.
+
 ---
 
 ## 2. Conventions
@@ -399,9 +409,18 @@ All other tables are independent or linked only by application-level logic rathe
 - The `ml_translations` table is managed exclusively by the Dynamic Multi-Language plugin. Dropping the table while the plugin is active will break dynamic translations until the plugin is deactivated and reactivated, or the table is recreated manually.
 - The `footer_info` table is managed by the FooterInfo plugin. It contains a single row with `id = 1` used by the plugin.
 
----
+## 6. Operational Checks
 
-## 6. Next Steps
+- [ ] The imported dump uses a collation supported by the target MySQL version.
+- [ ] `site_config` contains `language`, `site_name`, and `title_format` after installation.
+- [ ] `tools.name` is unique before inserting `tool_details` or `tool_versions`.
+- [ ] Deleting a category with projects respects the `RESTRICT` rule.
+- [ ] `nav_menu.parent_id` is null for the current flat menus.
+- [ ] `ml_translations` has the unique key before bulk-importing translations.
+- [ ] Plugin tables are backed up before deactivation or uninstallation.
+- [ ] The unused `categories` table is not mistaken for `project_categories`.
+
+## 7. Next Steps
 
 After reviewing the database schema, you may want to continue with:
 

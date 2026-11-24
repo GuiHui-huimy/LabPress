@@ -13,6 +13,17 @@ Each entry includes:
 
 If a hook is marked as reserved or placeholder, it is currently present in templates but may not yet be connected to a full implementation.
 
+```mermaid
+flowchart LR
+    A[Request] --> B[loadPlugins]
+    B --> C[init]
+    C --> D{Frontend or admin?}
+    D -->|Frontend| E[before_head_end / header / content / footer hooks]
+    D -->|Admin| F[admin_before_head_end / admin_menu / topbar / page hooks]
+    C --> G[translate / locale filters]
+    C --> H[plugin lifecycle actions]
+```
+
 ## 1. Global Lifecycle Hooks
 
 ### 1.1 `init`
@@ -243,6 +254,7 @@ Admin hooks are used in the admin panel and during data save operations.
 - **`admin_before_dashboard_stats`** – Action, triggered before the dashboard statistics grid.
 - **`admin_after_dashboard_stats`** – Action, triggered after the dashboard statistics grid.
 - **`admin_dashboard_counts`** – Filter, applied to the array of dashboard count values. Receives the counts array.
+- **`admin_dashboard_cards`** – Filter, applied to the dashboard card collection. Receives the cards array; plugins can append a card definition.
 
 ### 7.3 Admin Menu
 
@@ -268,15 +280,18 @@ The save API `api/save.php` applies dynamic hooks based on the content type and 
 
 - **`plugin_activation`** – Action, fired when a plugin is activated. Receives the plugin slug.
 - **`plugin_deactivation`** – Action, fired when a plugin is deactivated. Receives the plugin slug.
-- **`plugin_uninstalled`** – Action, fired before a plugin directory is removed during uninstallation. Receives the plugin slug.
+- **`plugin_uninstalled`** – Action, fired before a plugin directory is removed during uninstallation. Receives the plugin slug. In the current implementation it can also fire during deactivation when `plugin_uninstall()` exists, so cleanup must be idempotent.
 - **`plugin_installed`** – Action, fired after a plugin’s `plugin_install()` function has been called during activation. Receives the plugin slug.
 
 ## 9. Login Hooks
 
+The login page exposes three implemented hooks in 1.1.1:
+
 - **`login_redirect_url`** – Filter, applied to the redirect URL after a successful login. Receives the default URL.
-- **`login_error_message`** – Filter, applied to the error message shown on a failed login. Receives the error message.
 - **`login_before_form`** – Action, triggered before the login form.
 - **`login_after_form`** – Action, triggered after the login form.
+
+The Dynamic Multi-Language plugin uses `login_after_form` to render the admin language switcher. There is no `login_error_message` filter in the current core; error text is translated directly in the login template.
 
 ## 10. Translation and Other Filters
 
@@ -294,7 +309,17 @@ The dynamic admin save hooks follow a naming pattern that may vary depending on 
 
 If you are developing against a specific version of LabPress, always check the source files for the most accurate list, because new hooks may be added in future releases.
 
-## 12. Next Steps
+## 12. Operational Checks
+
+- [ ] The hook name matches the source string exactly, including plural forms.
+- [ ] The callback signature matches the documented arguments.
+- [ ] A filter returns a value; an action does not need to.
+- [ ] Priority is intentional; `10` is the default and runs before `20`.
+- [ ] Dynamic save hooks use the actual content type, such as `site-config`, not a translated label.
+- [ ] The hook is registered after `loadPlugins()` when it depends on another plugin.
+- [ ] Reserved hooks are tested with a real callback before being documented as available.
+
+## 13. Next Steps
 
 After reviewing the available hooks, you may want to continue with:
 

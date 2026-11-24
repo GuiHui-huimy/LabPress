@@ -16,6 +16,18 @@ https://github.com/GuiHui-huimy/LabPress
 
 All contributions should be submitted through GitHub Issues and Pull Requests.
 
+```mermaid
+flowchart TD
+    A[Fork or branch] --> B[Focused change]
+    B --> C[php -l]
+    C --> D[Manual test]
+    D --> E[Update docs]
+    E --> F[Pull request]
+    F --> G[Review]
+    G -->|Changes requested| B
+    G -->|Approved| H[Merge]
+```
+
 ## 2. Code of Conduct
 
 All contributors are expected to follow the project’s Code of Conduct. The full text is available in the `CODE_OF_CONDUCT.md` file in the repository root.
@@ -81,7 +93,11 @@ mysql -u root -p labpress_dev < labpressexample.sql
 
 ### 4.4 Configure the Database Connection
 
-Edit `includes/config.php` and set the database credentials for the local environment.
+Copy the sample configuration, then set the database credentials for the local environment:
+
+```bash
+cp includes/config-sample.php includes/config.php
+```
 
 Keep the local configuration private. Do not commit changes to `config.php` if they contain real credentials.
 
@@ -272,7 +288,7 @@ See the `LICENSE` file for the full license text.
 
 After reading this guide, you may want to:
 
-- Review the [Developer Resources](developer-resources.md) chapter for more detailed technical context.
-- Read the [Plugin Development](../plugins-dev/intro.md) section if you plan to build a plugin.
-- Check the [Hooks Reference](../plugins-dev/hooks-reference.md) before adding new hook-related functionality.
-- Explore the [API Reference](api.md) and [Database Schema](database.md) for technical details.
+- Review the [Developer Resources](reference/developer-resources.md) chapter for more detailed technical context.
+- Read the [Plugin Development](plugins-dev/intro.md) section if you plan to build a plugin.
+- Check the [Hooks Reference](plugins-dev/hooks-reference.md) before adding new hook-related functionality.
+- Explore the [API Reference](reference/api.md) and [Database Schema](reference/database.md) for technical details.

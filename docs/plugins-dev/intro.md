@@ -17,6 +17,20 @@ The plugin system is designed around four principles:
 - **Lifecycle awareness** – Plugins can run setup and cleanup tasks through lifecycle hooks.
 - **Dynamic discovery** – Plugins can be registered, activated, deactivated, and uninstalled through the admin panel.
 
+```mermaid
+flowchart TD
+    A[plugins/slug/plugin.php] --> B[syncPlugins]
+    B --> C[(plugins table)]
+    C --> D{status = 1?}
+    D -->|Yes| E[loadPlugins]
+    E --> F[require_once plugin.php]
+    F --> G[register actions and filters]
+    G --> H[init action]
+    H --> I[request output]
+```
+
+Loading is request-scoped. A plugin is not a persistent daemon: every request re-includes its `plugin.php` and re-registers its callbacks. That is why callbacks must be idempotent and cheap to register, and why activation-time setup should live in `plugin_install()`, not at file scope.
+
 ## 2. Core Components
 
 The plugin system consists of the following components.
@@ -201,6 +215,18 @@ After all active plugins are loaded, the core fires the `init` action hook. Plug
 
 The plugin lifecycle consists of four main stages: discovery, activation, deactivation, and uninstallation.
 
+```mermaid
+stateDiagram-v2
+    [*] --> Discovered: directory exists
+    Discovered --> Inactive: syncPlugins status=0
+    Inactive --> Active: activate status=1
+    Active --> Inactive: deactivate status=0
+    Inactive --> [*]: uninstall removes directory and row
+    Active --> Active: request-time loadPlugins
+```
+
+A plugin can move back and forth between **Active** and **Inactive** without losing its directory. Uninstallation is the destructive step. In the current implementation, deactivation also attempts to call `plugin_uninstall()` if that function exists, so a plugin that drops tables in `plugin_uninstall()` must treat deactivation as destructive. The safe pattern is to make cleanup idempotent and to keep destructive schema changes behind an explicit uninstall path.
+
 ### 6.1 Discovery
 
 Plugins that exist in the `plugins/` directory are not automatically registered in the database. The **Scan for New Plugins** button in the admin panel triggers the `syncPlugins()` function, which scans the directory and inserts any new plugin directories into the `plugins` table with a status of `0`.
@@ -301,7 +327,19 @@ Administrators should:
 - Keep the `plugins/` directory protected from direct public access.
 - Back up the site before installing untested plugins.
 
-## 12. Next Steps
+## 12. Operational Checks
+
+- [ ] The directory name and the `plugins.slug` value match exactly.
+- [ ] The plugin header contains name, description, version, and author.
+- [ ] Activation status is `1` after reload, not merely present in the directory.
+- [ ] `init` is used for runtime hooks; file-scope code only declares functions.
+- [ ] Deactivation leaves the site usable and does not delete source content unexpectedly.
+- [ ] The plugin's language strings resolve through `plugin:{slug}`.
+- [ ] Uninstallation is tested on staging with a database backup.
+
+If a plugin is active in the table but its hooks do not run, check the slug sanitization and the file path. If its admin page is missing, check `registerAdminPage()` and the permission argument. If its strings are raw keys, check the module prefix before editing any language file.
+
+## 13. Next Steps
 
 After reading this introduction, continue with:
 

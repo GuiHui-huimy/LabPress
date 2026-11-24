@@ -14,8 +14,24 @@ Project management is divided into two admin pages:
 - **Project List** – manages individual project entries and their display order.
 
 Both pages are accessible from the **Projects** parent menu in the admin sidebar.
-![LabPress ](../assets/contentImag/content/4_1.png)
-> **Administrator Project Manage Page**
+
+### 1.1 Data model and publishing workflow
+
+```mermaid
+flowchart LR
+    C[Project Categories<br/>slug, name, description] --> CT[(project_categories)]
+    P[Project List<br/>title, summary, Markdown, image, featured] --> PT[(projects)]
+    CT --> PT
+    PT --> API[api/data.php?type=projects]
+    API --> LIST[projects.php list + category filter]
+    API --> HOME[Homepage featured projects]
+    PT --> DETAIL[project-detail.php]
+```
+
+A project belongs to one category. The category slug is the filter key used by the public projects page. The featured flag is independent of sort order: featured controls whether the homepage section includes the item; sort order controls the sequence within lists.
+
+![Project categories and Projects submenu](../assets/contentImag/content/4_1.png)
+> **Figure 1.** The Project Categories table and the Projects submenu. Always create the category before assigning a project to it.
 
 
 ## 2. Accessing the Projects Module
@@ -42,8 +58,8 @@ The **Project Categories** page displays a table with the following columns:
 - **Actions** – buttons for editing and deleting the category.
 
 The category list is ordered by the `sort_order` field.
-![LabPress ](../assets/contentImag/content/4_2.png)
-> **Administrator Project Manage Page**
+![Project category list](../assets/contentImag/content/4_2.png)
+> **Figure 2.** Category list. Category slugs are stable filter keys; changing a slug can break existing links.
 
 ### 3.2 Adding a Category
 
@@ -63,8 +79,8 @@ To add a new category:
 4. Click **Save**.
 
 The new category is inserted into the `project_categories` table and becomes available for use when creating projects.
-![LabPress ](../assets/contentImag/content/4_3.png)
-> **Administrator Add Category Page**
+![Add category modal](../assets/contentImag/content/4_3.png)
+> **Figure 3.** Add Category. Use a lowercase slug with hyphens or underscores; avoid changing it after projects reference it.
 
 
 ### 3.3 Editing and Deleting Categories
@@ -121,8 +137,6 @@ The project form includes the following fields:
 4. Click **Save**.
 
 The project is inserted into the `projects` table and appears in the project list and on the public projects page. If featured, it may also appear on the homepage.
-![LabPress ](../assets/contentImag/content/4_3.png)
-> **Administrator Project List Page**
 
 
 ### 4.3 Writing Project Content in Markdown
@@ -138,10 +152,10 @@ For example, a project description may include:
 - Links to external documentation or papers.
 
 The Markdown editor in the admin form provides basic toolbar buttons for formatting, preview, and split-screen editing.
-![LabPress ](../assets/contentImag/content/4_6.png)
-> **Administrator Edit Project Page**
+![Project Markdown editor](../assets/contentImag/content/4_6.png)
+> **Figure 4.** The project editor. The content field is Markdown; EasyMDE supplies the toolbar and preview controls.
 
-> **截图占位**：此处可插入项目编辑弹窗中 Markdown 编辑器的截图，展示工具栏和预览功能，建议尺寸 900×700。
+The Markdown editor in the admin form provides basic toolbar buttons for formatting, preview, and split-screen editing. The editor is a convenience layer; the stored value is plain Markdown.
 
 ### 4.4 Uploading a Project Image
 
@@ -197,8 +211,8 @@ The homepage displays featured projects in a section titled **Projects and Achie
 The public **Projects** page includes a left sidebar with category filters and a main content area listing projects. Visitors can click a category to filter the displayed projects. Each project row shows the image, category tag, title, summary, and action links.
 
 The page also includes pagination for projects when the total number exceeds the page size.
-![LabPress ](../assets/contentImag/content/4_4.png)
-> **Project List**
+![Projects listing with category filters](../assets/contentImag/content/4_4.png)
+> **Figure 5.** The public projects page. Category selection filters the list; the sidebar is generated from project categories.
 
 
 ### 6.3 Project Detail Page
@@ -206,8 +220,8 @@ The page also includes pagination for projects when the total number exceeds the
 The project detail page displays the full Markdown-rendered content, featured image, category tag, and external links. The page title and content are filterable by plugins.
 
 A prominent button row at the bottom provides links to the GitHub repository, documentation, and any external project page if those URLs are set.
-![LabPress ](../assets/contentImag/content/4_5.png)
-> **Project Detail Page**
+![Project detail page](../assets/contentImag/content/4_5.png)
+> **Figure 6.** The project detail page. Markdown is rendered to HTML; GitHub, documentation, and external links are shown only when configured.
 
 
 ## 7. Multilingual Considerations
@@ -222,7 +236,18 @@ If you need multilingual project content, consider the following:
 
 The project list and detail templates apply filters such as `project_list_title` and `project_list_summary`, which can be extended by developers for translation purposes.
 
-## 8. Next Steps
+## 8. Operational Checks
+
+- [ ] Every project has a category whose slug still exists.
+- [ ] Featured projects are limited enough for the homepage layout (the template requests eight).
+- [ ] Sort values are consistent across categories; a new project's position is intentional.
+- [ ] Markdown links and images render correctly on the detail page.
+- [ ] Deleting a category does not leave orphaned projects.
+- [ ] A project image exists under `uploads/projects/` and is readable by the web server.
+
+If a project disappears from the homepage, check the `featured` flag before checking the template. If a category filter is empty, confirm that the project's `category_id` points to an existing category and that the slug is URL-safe.
+
+## 9. Next Steps
 
 After managing projects, you may want to continue with:
 

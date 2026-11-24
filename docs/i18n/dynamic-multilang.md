@@ -57,6 +57,20 @@ The table structure is:
 
 A unique constraint is defined on the combination of `table_name`, `record_id`, `field_name`, and `locale`, preventing duplicate translations for the same source field and language.
 
+```mermaid
+erDiagram
+    ml_translations {
+        int id PK
+        varchar table_name
+        varchar record_id
+        varchar field_name
+        varchar locale
+        text translated_value
+    }
+```
+
+The table is a sidecar, not a replacement. `nav_menu`, `slides`, and `site_config` keep their source values; `ml_translations` holds only target-language overrides. Deleting a translation row therefore restores the source value without any data migration.
+
 ## 4. Core Functions
 
 The plugin defines several utility functions in `plugin.php`.
@@ -208,6 +222,24 @@ LabPress_Hooks::addFilter('admin_locale', 'ml_admin_locale', 10, 2);
 
 A valid selection is written to the session and to a dedicated `ml_admin_locale` cookie. The cookie is separate from the frontend `lang` cookie, so changing the admin language does not change the public site language.
 
+```mermaid
+flowchart TD
+    A[Admin request] --> B{lang query valid?}
+    B -->|Yes| C[Use requested locale]
+    B -->|No| D{Session value valid?}
+    D -->|Yes| E[Use session locale]
+    D -->|No| F{Cookie valid?}
+    F -->|Yes| G[Use cookie locale]
+    F -->|No| H[Site default locale]
+    C --> I[Write session + cookie]
+    I --> E
+    E --> J[Set html lang + interface strings]
+    G --> J
+    H --> J
+```
+
+The query parameter is the immediate override used by the login-page switcher. The session keeps the choice across admin navigation; the cookie keeps it across browser restarts until it expires. If all three sources are absent, the site default is used, which is also the behavior when the plugin is inactive.
+
 The plugin renders its switcher through two core hooks:
 
 - `admin_topbar_actions` in `admin/index.php`, after the user chip.
@@ -299,7 +331,20 @@ Because the plugin uses the standard `translate` filter, other plugins can coope
 
 Custom content types can be made translatable by registering filters similar to those used for navigation menus and slides. For example, a custom content type could register a filter on its own data hook and call `ml_get_translation()` with an appropriate table name.
 
-## 12. Next Steps
+## 12. Operational Checks
+
+- [ ] The plugin is active before the admin switcher is expected to appear.
+- [ ] `ml_source_locale` matches the language the editors actually write in.
+- [ ] A translation row exists for every target locale that should differ from the source.
+- [ ] Deleting a translation row restores the source text.
+- [ ] The login switcher changes the login page and the post-login admin page.
+- [ ] `lang=zh_CN` on `admin/login.php` produces `<html lang="zh-CN">`, not only a changed URL.
+- [ ] Deactivating the plugin leaves login and dashboard usable in the site default language.
+- [ ] Uninstalling the plugin drops `ml_translations` only after a backup exists.
+
+If the login page URL contains `?lang=zh_CN` but the HTML still declares `en-US`, check the order in `getLocale()` and `loadPlugins()` first. The admin locale filter must be registered before the first locale resolution; a URL parameter alone does not change the interface if the filter callback is missing or returns an invalid locale.
+
+## 13. Next Steps
 
 After understanding the Dynamic Multi-Language plugin, you may want to explore:
 

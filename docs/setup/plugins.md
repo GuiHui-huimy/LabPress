@@ -10,7 +10,23 @@ LabPress uses a lightweight plugin system that allows additional functionality t
 
 The administration panel provides a complete interface for managing plugins. From the **Plugins** menu, administrators can view installed plugins, activate or deactivate them, scan for newly added plugin directories, install plugins from ZIP archives, and uninstall plugins that are no longer needed.
 
-> **截图占位**：此处可插入 **Plugins > Installed Plugins** 页面截图，展示插件列表和操作按钮，建议尺寸 1280×800。
+### 1.1 Plugin lifecycle
+
+```mermaid
+flowchart TD
+    A[Directory in plugins/] --> B[Scan for new plugins]
+    B --> C[(plugins table, status=0)]
+    C --> D{Activate}
+    D -->|status=1| E[loadPlugins includes plugin.php]
+    E --> F[plugin_install → plugin_installed → plugin_activation]
+    C --> G{Deactivate}
+    G -->|status=0| H[plugin_uninstall if present → plugin_uninstalled → plugin_deactivation]
+    C --> I{Uninstall}
+    I --> J[plugin_uninstalled]
+    J --> K[remove directory + delete row]
+```
+
+The key operational rule is that a plugin directory is not active merely because it exists. It must be registered in the `plugins` table and have `status = 1`. A plugin can also be disabled without being deleted, which is the safe default when troubleshooting.
 
 ## 2. Plugin Storage and Registration
 
@@ -156,7 +172,7 @@ LabPress_Hooks::doAction('plugin_deactivation', $slug);
 
 Note: The current implementation calls `plugin_uninstall()` during deactivation, which may not be desirable for all plugins. This behavior may be refined in future releases. Plugin developers should be aware that any cleanup logic should be placed in the `plugin_uninstalled` hook or in the plugin’s own deactivation handler if available.
 
-> **截图占位**：此处可插入插件激活/停用操作时的成功提示截图，建议尺寸 800×400。
+Plugin developers should also make cleanup idempotent: an activation hook may run again after a manual reactivation, and an uninstall hook must tolerate partially removed tables or directories.
 
 ## 8. Installing Plugins via ZIP Upload
 
@@ -248,6 +264,18 @@ The plugin system uses the `LabPress_Hooks` class to trigger events during the p
 
 Plugin developers can use these hooks to perform custom setup and cleanup tasks. For example, a plugin can create a database table when activated and drop it when uninstalled.
 
+### 11.1 Plugin language files in 1.1.1
+
+A plugin's own interface strings must be loaded explicitly:
+
+```php
+__('ml_plugin_name', 'plugin:dynamic-multilang');
+```
+
+The language file lives at `plugins/{slug}/languages/{locale}.php`. The core no longer merges every active plugin language file into the core namespace, so moving plugin strings into `languages/` is not a supported shortcut. When a plugin is deactivated, its language callback disappears; core strings remain intact.
+
+This boundary is separate from database-content translation. Dynamic Multi-Language still uses `ml_translations` for navigation titles, slide text, and site settings.
+
 A full reference of all hooks is available in the [Hooks Reference](../plugins-dev/hooks-reference.md) chapter.
 
 ## 12. Security Considerations
@@ -260,7 +288,19 @@ The `plugins/` directory must not be directly accessible by visitors. Web server
 
 When uninstalling a plugin, its directory is permanently deleted. Ensure that any data or database tables created by the plugin are no longer needed or have been backed up before performing the uninstall.
 
-## 13. Next Steps
+## 13. Operational Checks
+
+- [ ] The plugin directory name matches the `slug` in the `plugins` table.
+- [ ] `plugin.php` has a complete header: name, description, version, author.
+- [ ] Activation succeeds and the plugin appears as **Active** after reload.
+- [ ] Deactivation does not remove data unless the plugin explicitly intends to.
+- [ ] The plugin uses `plugin:{slug}` for its own language strings.
+- [ ] A ZIP install is tested on staging before production.
+- [ ] A backup exists before uninstalling a plugin that owns custom tables.
+
+If a plugin activates but its menu item is missing, check that it registers an admin page on `init` and that the current user has the page's permission. If its strings are missing, check the language file path and the `plugin:` module name before editing core language packs.
+
+## 14. Next Steps
 
 After managing plugins, you may want to continue with:
 

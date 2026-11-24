@@ -1,77 +1,159 @@
 # Changelog
 
-All notable changes to LabPress will be documented in this file.
+All notable changes to LabPress are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Versions are ordered from newest to oldest.
 
 ## [1.1.1] - 2026-11-24
 
+LabPress 1.1.1 is a maintenance and integration release. It does not add a new database schema or a new top-level module; instead, it tightens the boundary between the core and plugins, makes the admin language setting genuinely independent from the frontend, and completes the public navigation with an account entry.
+
+### Highlights
+
+- **Cleaner i18n boundary.** Core language packs now contain only framework-owned strings. Plugin language files are loaded only through an explicit `plugin:{slug}` module, so a plugin can no longer overwrite a core label by accident.
+- **Independent admin language.** The admin panel can use its own locale, persisted in `ml_admin_locale`, without changing the visitor-facing `lang` cookie. The switch is available on the login page and in the admin topbar.
+- **Correct first-request locale resolution.** `loadPlugins()` now runs before the early `getLocale()` call. A `?lang=zh_CN` request therefore reaches the plugin's `admin_locale` filter instead of caching the site default for the whole request.
+- **Public account entry.** The front-end navigation now shows a **Sign in** button for guests and the signed-in username for administrators. The username links to the dashboard and exposes a hover menu of permitted admin pages.
+- **Front-end-safe login redirect.** A login started from the public homepage can return to the homepage after success instead of always landing in `/admin/index.php`.
+
 ### Added
 
-- `admin_locale` filter in `getLocale()` for an optional, plugin-owned backend locale policy. The core falls back to the site default locale when no plugin handles the filter.
-- `admin_topbar_actions` action in the admin topbar, allowing plugins to add compact controls such as a language switcher.
-- Dynamic Multi-Language 2.0.2: backend language selection in the login page and admin topbar, persisted in a dedicated `ml_admin_locale` session/cookie, independent from the frontend `lang` cookie.
-- Frontend navigation account entry: a login button sends visitors to the admin login and returns them to the homepage after success; logged-in users see their username with a hover menu of admin shortcuts.
+- Added the `admin_locale` filter in `getLocale()`. Signature: `applyFilters('admin_locale', $defaultLocale, $availableLocales)`. The filter must return a locale directory name; invalid or non-string values fall back to the site default.
+- Added the `admin_topbar_actions` action in the admin topbar. Plugins can render compact controls without replacing the whole topbar template.
+- Added Dynamic Multi-Language 2.0.2 with backend language selection on `admin/login.php` and in the admin topbar.
+- Added the `ml_admin_locale` session and cookie preference. Resolution order is request `lang`, session value, cookie value, then the core site default.
+- Added the public navigation account entry in `includes/header.php`:
+  - guests see a **Sign in** button linking to `admin/login.php?redirect=home`;
+  - authenticated users see `$_SESSION['user']`;
+  - the username links directly to `admin/index.php`;
+  - hovering or keyboard-focusing the username opens a menu with dashboard, publications, projects, tools, and research-news shortcuts;
+  - entries that require a permission the current user does not have are not rendered.
+- Added `redirect=home` handling in `admin/login.php`, including a hidden form field and the existing `login_redirect_url` filter. Only the literal value `home` is treated as a homepage redirect, so the parameter cannot be used as an open redirect.
+- Added the front-end language keys `nav_login`, `nav_admin`, `nav_admin_dashboard`, `nav_admin_publications`, `nav_admin_projects`, `nav_admin_tools`, and `nav_admin_news` in both `zh_CN` and `en_US`.
+- Added regression notes for the locale-order fix in `docs/i18n/core-lang.md` and `docs/changelog.md`.
 
 ### Changed
 
-- Core `__()` no longer scans and merges language files from every active plugin. Plugin strings must use the explicit `plugin:{slug}` module, preventing plugin keys from overwriting core UI strings.
-- Dynamic Multi-Language menu registration now uses `__('ml_plugin_name', 'plugin:dynamic-multilang')`.
-- Admin JavaScript for project management, news management, plugin market and plugin install now reads injected language objects instead of hardcoded Chinese labels.
+- Core `__()` no longer scans and merges every active plugin's language file. It loads:
+  - `languages/{locale}/{module}.php` for core modules; or
+  - `plugins/{slug}/languages/{locale}.php` when the caller explicitly uses `plugin:{slug}`.
+- Plugin language keys are no longer part of the global core namespace. A plugin must call `__('key', 'plugin:plugin-slug')` for its own strings, and should still use a unique prefix such as `ml_`, `fi_`, or `acme_`.
+- Dynamic Multi-Language registers its admin menu title with `__('ml_plugin_name', 'plugin:dynamic-multilang')` instead of relying on an implicit merge.
+- Admin JavaScript for project management, news management, plugin market, and plugin installation now reads language objects injected by PHP rather than embedding Chinese labels in JS source.
+- The admin language policy is now explicitly plugin-owned. The core supplies only the `admin_locale` filter and a safe fallback; without the plugin, the admin panel follows the site default language.
+- The front-end header is now the single source of truth for the account entry. Because it is shared by all public pages, the entry is not limited to `index.php`.
 
 ### Fixed
 
-- Fixed the Dynamic Multi-Language admin page using the non-existent `original_content` key instead of `ml_original_content`.
+- Fixed the admin language switch being ignored on the first request. `getLocale()` previously ran before `loadPlugins()`, so the `admin_locale` filter did not exist and the site default locale was cached in the static `$locale` variable. Locale resolution now runs after plugin loading.
+- Fixed the Dynamic Multi-Language admin page reading a non-existent `original_content` key; it now uses `ml_original_content`.
 - Fixed missing `ml_no_translations_yet` interface text in the plugin language packs.
-- Fixed hardcoded “个 / 无” strings in the tool version admin view; they now use the `count_unit` and `none` core keys.
-- Fixed the admin language switch being ignored on the first request: `getLocale()` was resolved before `loadPlugins()`, so the `admin_locale` filter had not been registered and the site default locale was cached. Locale resolution now runs after plugins are loaded.
+- Fixed hard-coded `个` and `无` strings in the tool-version admin view; the page now uses the `count_unit` and `none` core keys.
+- Fixed the account dropdown inheriting the main navigation's flex layout; the nested list is explicitly rendered as a vertical block.
+- Fixed the public login link losing its return target after form submission; the hidden `redirect` field preserves `home`.
+
+### Documentation
+
+- Reworked the v1.1.1 changelog into a release note with upgrade and verification steps.
+- Documented the core/plugin language boundary, the `admin_locale` contract, the login-page and topbar switchers, and the locale-order regression.
+- Added Mermaid diagrams for the request lifecycle, locale resolution, plugin lifecycle, translation flow, and content-management workflows.
+- Corrected stale navigation paths and installation section numbering.
+
+### Upgrade Notes
+
+1. **Back up first.** Export the MySQL database and archive `includes/config.php`. The file is intentionally untracked or skip-worktree in many deployments and must not be overwritten by a pull.
+2. **Update the working tree.** On the server, run `git pull` from the project root. If the server has local edits that are known to be disposable, stash them first; do not run `git reset --hard` on a tree that contains a protected `includes/config.php`.
+3. **Confirm the plugin version.** Open **Plugins → Installed Plugins** and verify that Dynamic Multi-Language reports `2.0.2`. If the plugin is active but its files are older, replace the plugin directory from the release package and reactivate it.
+4. **Clear opcache if applicable.** If PHP OPcache is enabled, reload PHP-FPM or restart the pool so the new `includes/functions.php` is compiled. A stale opcode cache can make the language fix appear not to work.
+5. **Do not copy old plugin language files into `languages/`.** Plugin strings must stay inside the plugin. Moving them into the core pack reintroduces key collisions.
+6. **Re-login once.** The account entry reads `$_SESSION['user']`; after deployment, sign out and sign in again so the public header can render the username.
+
+No database migration is required for 1.1.1. Existing `ml_translations`, `plugins`, and content tables remain compatible.
+
+### Verification Checklist
+
+```mermaid
+flowchart TD
+    A[Deploy 1.1.1] --> B[Open /admin/login.php?lang=zh_CN]
+    B --> C{HTML lang is zh-CN?}
+    C -- No --> D[Check loadPlugins order and OPcache]
+    C -- Yes --> E[Switch to English and back]
+    E --> F[Open frontend in another tab]
+    F --> G[Frontend language must remain independent]
+    G --> H[Sign in from homepage]
+    H --> I{Returned to homepage?}
+    I -- No --> J[Check hidden redirect field]
+    I -- Yes --> K[Username appears in nav bar]
+    K --> L[Hover username: admin links open]
+    L --> M{Only permitted links visible?}
+    M -- No --> N[Check permissions array in session]
+    M -- Yes --> O[Release verified]
+```
+
+- `curl -s 'https://your-site/admin/login.php?lang=zh_CN' | grep '<html'` should show `lang="zh-CN"` (or the locale attribute used by the current template).
+- The language switch must survive a reload and must not change the public site's language.
+- The public **Sign in** button must appear only when no user session exists.
+- After login from the homepage, the browser must return to `/index.php`, not to `/admin/index.php`.
+- The username menu must show **Dashboard** for every authenticated user and hide publication/project/tool/news entries that the account cannot access.
+- The plugin can be deactivated without breaking the admin panel; the backend then falls back to the site default language.
+
+![v1.1.1 admin login with the language switcher](assets/contentImag/Gettingstart/v111-login-zh.png)
+> The login-page switcher added by Dynamic Multi-Language 2.0.2. The URL carries `?lang=zh_CN`; the interface and `<html lang>` must both be Chinese, not only the address bar.
+
+### Compatibility and Boundaries
+
+| Item | 1.1.1 status |
+| --- | --- |
+| PHP | 7.4 or newer; PHP 8.x supported by the code path used in this release |
+| MySQL / MariaDB | MySQL 5.7+ / MariaDB 10.3+ |
+| Database migration | None |
+| Plugin API | `admin_locale` filter and `admin_topbar_actions` action are additive |
+| Language packs | Core packs own framework strings; plugin packs must use `plugin:{slug}` |
+| Front-end account menu | Requires a valid `$_SESSION['user']` and the `hasPermission()` helper |
+| Screenshots | v1.1.1 admin dashboard and login captures are refreshed; older module captures remain in place until the host is reachable again |
 
 ## [1.1.0] - 2026-08-14
 
 ### Added
 
-- Translation function `__()` now supports explicit plugin language loading using the `plugin:` prefix. Plugin authors can call `__('key', 'plugin:plugin-slug')` to load translations directly from a specific plugin, avoiding key collisions with core language packs.
+- Translation function `__()` now supports explicit plugin language loading with the `plugin:` prefix. Plugin authors can call `__('key', 'plugin:plugin-slug')` to load translations from a specific plugin without merging them into the core namespace.
 
 ### Changed
 
-- Plugin language files are now loaded only when explicitly requested or during the automatic scan of active plugins. The automatic scan now sanitizes plugin slugs before building file paths.
-- Dynamic Multi-Language plugin language keys now use the `ml_` prefix to prevent conflicts with core language keys.
+- Plugin language files are loaded only when explicitly requested or during the legacy scan of active plugins. The scan sanitizes plugin slugs before constructing file paths.
+- Dynamic Multi-Language language keys use the `ml_` prefix to avoid collisions with core keys.
 
 ### Fixed
 
-- Fixed an issue where the Dynamic Multi-Language plugin's language keys (such as `plugin_name`, `about_us`, `research_title`) overwrote core language keys, causing incorrect strings to appear in the admin panel.
-- Fixed plugin language file loading path when using the explicit `plugin:` module prefix.
+- Fixed an issue where Dynamic Multi-Language keys such as `plugin_name`, `about_us`, and `research_title` overwrote core language keys and produced incorrect admin labels.
+- Fixed the plugin language file path when using the explicit `plugin:` module prefix.
 
 ### Documentation
 
-- Updated plugin development documentation to include the `plugin:` explicit language loading syntax and key prefix recommendation.
+- Documented the explicit `plugin:` syntax and the recommended key-prefix convention.
 
 ## [1.0.0] - 2026-08-11
 
 ### Added
 
-- Initial stable release of LabPress, an open-source academic CMS designed for research laboratories.
-
-#### Core Features
-
-- Dynamic content management – Edit "About Us", research directions, stats, navigation menus directly from the backend.
-- Built-in academic modules – Publications, projects, research news, tools, and version management.
-- Hook-driven plugin system – Fully extendable via WordPress-like Action/Filter hooks.
-- Comprehensive i18n – Front-end and back-end locales are decoupled; dynamic multi-language support for all user-generated content.
-- Markdown editor – Integrated EasyMDE with live preview and split-screen editing.
-- Lightweight & zero-dependency – Pure PHP + MySQL, no frameworks or Composer required.
-- Plugin ecosystem – Install, activate, update, and uninstall plugins directly from the admin panel.
+- Initial stable release of LabPress, an open-source academic CMS for research laboratories.
+- Dynamic content management for About Us, research directions, statistics, and navigation menus.
+- Built-in academic modules for publications, projects, research news, tools, and tool versions.
+- Hook-driven plugin system with WordPress-style actions and filters.
+- Two-layer internationalization: static language packs plus the Dynamic Multi-Language plugin for database content.
+- Markdown editing with EasyMDE and live preview.
+- Pure PHP + MySQL runtime with no framework, Composer, or build step.
+- Plugin installation, activation, update, and uninstallation from the admin panel.
 
 ### Installation
 
 - Clone or download the repository.
-- Copy `includes/config-sample.php` to `includes/config.php` and fill in database credentials.
+- Copy `includes/config-sample.php` to `includes/config.php` and set the database credentials.
 - Import `labpressexample.sql` into MySQL.
-- Grant write permissions to `uploads/` and `plugins/` directories.
-- Access frontend at `/`, backend at `/admin`.
+- Grant write permissions to `uploads/` and `plugins/`.
+- Open `/` for the frontend and `/admin` for the panel.
 
 ### Important
 
-- The default administrator account included in the example database must be changed immediately after login.
-- This release uses GPL v3 license.
+- Change the default `root` / `lab123456` credentials immediately after the first login.
+- LabPress is distributed under GPL-3.0.

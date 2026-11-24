@@ -1,14 +1,14 @@
 # Site Settings
 
-This chapter provides a detailed reference for the **Settings > General Settings** page in the LabPress administration panel. It describes the purpose of each configuration field, how the data is stored in the database, and how the configured values are rendered on the public website.
+This chapter provides a detailed reference for the **Settings → Site Config** page in the LabPress administration panel. The page is labeled **General Settings** in the English language pack and **基础设置** in Chinese; both names point to the same view. It describes the purpose of each configuration field, how the data is stored in the database, and how the configured values are rendered on the public website.
 
-The information in this chapter is intended for site administrators who are responsible for maintaining the content and identity of a LabPress installation. It assumes that you are already familiar with the basic concepts introduced in [Basic Configuration](../getting-started/configuration.md).
+The information in this chapter is intended for site administrators who are responsible for maintaining the content and identity of a LabPress installation. It assumes that you are already familiar with the basic concepts introduced in [Configuration Layers](../getting-started/configuration.md).
 
 ## 1. Overview
 
-The General Settings page is the central place for configuring the identity and homepage content of a LabPress site. All values edited on this page are stored in the `site_config` table, which is the primary configuration store for business-level settings.
+The Site Config page is the central place for configuring the identity and homepage content of a LabPress site. All values edited on this page are stored in the `site_config` table, which is the primary configuration store for business-level settings.
 
-Unlike the environment configuration file `includes/config.php`, which contains database credentials and PHP-level constants, the General Settings page is designed to be edited through the browser without requiring direct file access.
+Unlike the environment configuration file `includes/config.php`, which contains database credentials and PHP-level constants, the Site Config page is designed to be edited through the browser without requiring direct file access.
 
 This page provides controls for the following areas:
 
@@ -18,12 +18,27 @@ This page provides controls for the following areas:
 - “About Us” content
 - Statistics displayed on the homepage
 - Research direction heading, subheading, and cards
-![LabPress](../assets/contentImag/Gettingstart/3_3.png)
-> **Administartor General Setting Page**
+
+![Site Config page](../assets/contentImag/Gettingstart/3_3.png)
+> **Figure 1.** The Site Config page. The public homepage reads these values directly from `site_config`.
+
+### 1.1 Data flow and caching
+
+```mermaid
+flowchart LR
+    A[Admin form] --> B[api/save.php<br/>type=site-config]
+    B --> C[(site_config)]
+    C --> D[LabPress::config cache]
+    D --> E[Homepage / page title / footer]
+    C --> F[Dynamic Multi-Language]
+    F --> E
+```
+
+`LabPress::config()` caches the table for the current request. A direct SQL edit becomes visible on the next request, not immediately in the current browser tab. The Dynamic Multi-Language plugin may filter `about_us`, `research_title`, `research_subtitle`, statistics labels, and research card text; it does not rewrite the stored source values.
 
 ## 2. Access and Permissions
 
-The General Settings page is available from the admin sidebar under **Settings > General Settings**.
+The Site Config page is available from the admin sidebar under **Settings → Site Config**.
 
 Access to this page requires the `all` user permission. Only administrator accounts with the `all` permission can view or modify the settings. If a user without sufficient permission attempts to open the page, the admin panel displays a permission error.
 
@@ -38,24 +53,26 @@ if (!hasPermission('all')) {
 
 This ensures that site identity and content configuration remain restricted to trusted administrators.
 
-## 3. General Settings Fields
+## 3. Site Config Fields
 
-The General Settings form is divided into several logical sections. Each section corresponds to one or more entries in the `site_config` table.
+The Site Config form is divided into several logical sections. Each section corresponds to one or more entries in the `site_config` table.
 
 ### 3.1 Site Language
 
-The **Site Language** field determines the default language of the site.
+The **Site Language** field determines the fallback locale of the site.
 
-This setting controls:
+The setting controls:
 
-- The language used by the admin panel, regardless of frontend language selection.
-- The fallback language for the frontend when no user-selected language is available.
+- the default locale used when no visitor preference exists;
+- the fallback used by the admin panel when Dynamic Multi-Language is absent or returns an invalid value.
+
+It does **not** force the admin panel language when Dynamic Multi-Language is active. In 1.1.1 the admin locale is resolved by `admin_locale`, which the plugin implements with `ml_admin_locale`. A site can therefore have a Chinese default for visitors and an English admin interface, or the reverse.
 
 The dropdown is populated dynamically from the `languages/` directory. Each language directory that contains a valid `lang.config` file appears as an option. LabPress ships with Chinese (`zh_CN`) and English (`en_US`) language packs by default.
 
-The selected value is stored in the `site_config` table under the key `language`.
+The selected value is stored under the key `language`.
 
-If you add a new language pack to the `languages/` directory, it will automatically appear in the dropdown after the next page load.
+If you add a new language pack to `languages/`, it will appear in the dropdown after the next page load. The admin switcher lists it only while Dynamic Multi-Language is active.
 
 ### 3.2 Site Name and Site Title
 
@@ -215,7 +232,7 @@ For example, the “About Us” section is populated with the value of `about_us
 
 The core function `getSiteConfig()` is used to load all configuration values from the `site_config` table. The `LabPress::config()` method provides cached access to individual keys and is used internally by many core components.
 
-Because the admin panel and frontend share the same configuration store, any change made on the General Settings page becomes visible on the public site immediately after the next page load.
+Because the admin panel and frontend share the same configuration store, any change made on the Site Config page becomes visible on the public site after the next page load and after any page cache is invalidated.
 
 ## 6. Extensibility Hooks
 
@@ -225,7 +242,19 @@ The most relevant hook is the `translate` filter, which allows the Dynamic Multi
 
 Additional generic hooks are triggered during the save process. The `admin_prepare_site-config` filter can be used to modify the data before it is saved, and the `admin_after_site-config_save` action is triggered after a successful save. These hooks are described further in the [Hooks Reference](../plugins-dev/hooks-reference.md).
 
-## 7. Next Steps
+## 7. Operational Checks
+
+- [ ] The site name and site title are both set; they are not the same field.
+- [ ] The title format contains both placeholders intentionally.
+- [ ] The homepage statistics and research cards parse as valid JSON after saving.
+- [ ] The About Us content is sanitized or trusted before output.
+- [ ] The default locale is available in `languages/` and has a `lang.config`.
+- [ ] The public homepage and browser tab both reflect the saved values.
+- [ ] If Dynamic Multi-Language is active, the source locale is correct before translators begin.
+
+If a setting appears to save but the home page does not change, query `site_config` directly and check the value. If the value is correct in the table, inspect `LabPress::config()` caching and any page-level cache before editing the template.
+
+## 8. Next Steps
 
 After configuring the general site settings, you may want to continue with:
 
@@ -233,4 +262,4 @@ After configuring the general site settings, you may want to continue with:
 - [Plugin Management](plugins.md) – activate or install additional plugins.
 - [Content Management](../content/publications.md) – create publications, slides, tools, projects, and news.
 - [Internationalization](../i18n/overview.md) – manage languages and dynamic translations.
-- [Basic Configuration](../getting-started/configuration.md) – review environment and PHP-level settings.
+- [Configuration Layers](../getting-started/configuration.md) – review environment and PHP-level settings.

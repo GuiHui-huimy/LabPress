@@ -13,13 +13,30 @@ The user management page is available from the admin sidebar under **Users**. Fr
 All user data is stored in the `users` table. The permission values are stored in JSON format and can include one or more of the following:
 
 - `all` – full access to every module and setting.
-- `publications` – access to publications management.
+- `publications` – access to publications and news management.
 - `slides` – access to slides management.
 - `tools` – access to tool, project, and category management.
 - `users` – access to user management.
 
-![LabPress ](../assets/contentImag/content/6_1.png)
-> **Administrator User Manager**
+### 1.1 Authentication and permission flow
+
+```mermaid
+flowchart TD
+    A[Login form] --> B[password_verify against users.password_hash]
+    B -->|fail| C[Reject login]
+    B -->|success| D[session: user + permissions JSON]
+    D --> E[Admin view guard]
+    E --> F{hasPermission required key?}
+    F -->|all or key| G[Render view]
+    F -->|no| H[Permission error]
+    D --> I[Public header account entry]
+    I --> J[Show permitted admin shortcuts]
+```
+
+The public account menu uses the same `$_SESSION['permissions']` array as the admin views. It is a convenience layer, not a separate authorization system: every admin page and API still performs its own permission check.
+
+![Users manager](../assets/contentImag/content/6_1.png)
+> **Figure 1.** The Users page. The list is loaded from the users table; password fields are never rendered with the stored hash.
 
 
 ## 2. Accessing the Users Manager
@@ -61,8 +78,8 @@ To add a new administrator account:
 The new user is inserted into the `users` table with the password securely hashed. The user can now log in to the admin panel with the credentials you provided.
 
 When creating a user, grant only the permissions that are necessary for that person’s role. For full administrative access, select the **All** permission. For limited roles, select only the relevant module permissions.
-![LabPress ](../assets/contentImag/content/6_2.png)
-> **Administrator Add User**
+![Add user modal](../assets/contentImag/content/6_2.png)
+> **Figure 2.** Add User. Select only the permissions required for the person's role.
 
 
 ## 5. Editing a User
@@ -77,8 +94,8 @@ To modify an existing user:
 
 The username field may be disabled when editing an existing user. The current implementation allows you to change permissions without resetting the password. If you need to change the username, you may need to create a new account or update the record directly in the database, depending on the current version.
 
-![LabPress ](../assets/contentImag/content/6_3.png)
-> **Administrator Edit User**
+![Edit user modal](../assets/contentImag/content/6_3.png)
+> **Figure 3.** Edit User. The username is normally fixed; permissions can be changed without resetting the password.
 
 
 ## 6. Deleting a User
@@ -124,8 +141,8 @@ To change another user’s password:
 4. Click **Update**.
 
 This is useful when a user forgets their password or when you need to enforce a password reset.
-![LabPress ](../assets/contentImag/content/6_4.png)
-> **Administrator Edit User**
+![Password management forms](../assets/contentImag/content/6_4.png)
+> **Figure 4.** Password management. The “Change Other User Password” form is only available with the `all` permission.
 
 
 ## 8. Permission Model
@@ -162,7 +179,18 @@ User accounts control access to the entire admin panel. Follow these recommendat
 
 The user management system uses PHP’s `password_hash()` and `password_verify()` functions with bcrypt hashing. Passwords are never stored in plain text.
 
-## 10. Next Steps
+## 10. Operational Checks
+
+- [ ] At least one `all` account exists and its password is stored outside the repository.
+- [ ] The default `root` password has been changed.
+- [ ] A limited editor can log in but cannot open unrelated modules.
+- [ ] The public account dropdown hides modules the user cannot access.
+- [ ] Deleting an account does not remove the last administrator.
+- [ ] Password changes are verified with a fresh login, not only with an in-session form message.
+
+If a user can see a menu item but receives a permission error after clicking it, check both the menu's declared permission and the view's own guard. The menu is not the authorization boundary.
+
+## 11. Next Steps
 
 After managing users, you may want to continue with:
 

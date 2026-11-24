@@ -10,6 +10,17 @@ LabPress includes several security controls that are designed to protect the app
 
 While LabPress includes these protections, no web application can be considered completely secure without a properly configured hosting environment. Administrators should follow the deployment recommendations in this chapter and keep the system up to date.
 
+```mermaid
+flowchart TD
+    A[Request] --> B{Authenticated?}
+    B -->|No| C[Redirect to login / 403]
+    B -->|Yes| D{Required permission?}
+    D -->|No| E[403 / denied view]
+    D -->|Yes| F[Prepared statement / escaped output]
+    F --> G[Upload or plugin action]
+    G --> H[Audit and backup]
+```
+
 ## 2. Built-In Security Measures
 
 ### 2.1 Password Storage
@@ -55,7 +66,9 @@ User-generated content and data retrieved from the database are escaped before b
 
 The templates use `htmlspecialchars()` to escape dynamic values. This reduces the risk of cross-site scripting (XSS) when displaying content such as news titles, project names, menu items, and configuration values.
 
-Markdown rendering is performed by the bundled Parsedown library, and the resulting HTML is filtered before it is passed to the template layer.
+Markdown rendering uses the bundled Parsedown library with `setSafeMode(false)`, which intentionally allows raw HTML inside Markdown bodies. That means article/project body content is trusted input, not sanitized input. Only administrators and editors you trust should be able to write long-form content; if that trust boundary is not acceptable, switch Parsedown to safe mode or add an HTML sanitizer before rendering.
+
+The same principle applies to `site_config` values such as About Us text: some fields are intentionally rendered as HTML. Do not grant content permissions to accounts you would not trust with HTML output.
 
 ### 2.6 File Upload Restrictions
 
@@ -167,12 +180,23 @@ The admin panel is restricted to trusted administrators. The public frontend is 
 
 When deploying LabPress in a shared or public environment, treat the admin panel as the primary security boundary and restrict access to it using additional controls such as IP allowlists or VPN access if necessary.
 
-## 6. Next Steps
+## 6. Operational Checks
+
+- [ ] The default `root` password has been changed.
+- [ ] `includes/config.php` is outside version control and not web-readable.
+- [ ] HTTPS is enabled and session cookies are marked `HttpOnly` and `SameSite=Lax`.
+- [ ] Only trusted users hold `all` or content-edit permissions.
+- [ ] `uploads/`, `plugins/`, and `images/` are not directly executable.
+- [ ] Plugin ZIPs are reviewed before activation.
+- [ ] Database and `uploads/` backups exist outside the web root.
+- [ ] Markdown raw-HTML behavior is accepted or safe mode is enabled.
+
+## 7. Next Steps
 
 After reviewing the security documentation, you may want to:
 
-- Read the [Installation Guide](../getting-started/installation.md) for secure installation steps.
-- Review the [Basic Configuration](../getting-started/configuration.md) for environment settings.
-- Check the [Users Management](../content/users.md) guide for account and permission best practices.
-- Review the [Plugin Management](../setup/plugins.md) guide for plugin safety.
-- Consult the [Developer Resources](../reference/developer-resources.md) if you are working with the codebase.
+- Read the [Installation Guide](getting-started/installation.md) for secure installation steps.
+- Review the [Configuration Layers](getting-started/configuration.md) for environment settings.
+- Check the [Users Management](content/users.md) guide for account and permission best practices.
+- Review the [Plugin Management](setup/plugins.md) guide for plugin safety.
+- Consult the [Developer Resources](reference/developer-resources.md) if you are working with the codebase.

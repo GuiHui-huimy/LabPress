@@ -17,6 +17,21 @@ The system is built around a single translation function, `__()`, which:
 
 Language packs are loaded separately from the database-backed translation system provided by the Dynamic Multi-Language plugin. Together, they cover both static and dynamic content.
 
+```mermaid
+flowchart LR
+    A[__ key, module] --> B{module starts with plugin:?}
+    B -->|No| C[languages/locale/common.php]
+    C --> D[languages/locale/module.php]
+    D --> E[dot-path lookup]
+    B -->|Yes| F[plugins/slug/languages/locale.php]
+    F --> G[lookup inside plugin array]
+    E --> H[translate filter]
+    G --> H
+    H --> I[return string or key]
+```
+
+The diagram shows the important v1.1.1 boundary: a plugin file is never merged into the core array. It is read only for the current call and only when the caller asks for `plugin:{slug}`.
+
 ## 2. Directory Structure
 
 The core language files are organized as follows:
@@ -229,7 +244,7 @@ The detection logic depends on the request context.
 
 ### 9.1 Admin Context
 
-In the admin area, the function always returns the site default language. This is determined by checking the `IS_ADMIN` constant or the script path.
+In the admin area, `getLocale()` applies the `admin_locale` filter to the site default language. If no plugin handles the filter, or if the returned locale is not in the available list, it returns the site default. This is determined by checking the `IS_ADMIN` constant or the script path.
 
 ### 9.2 Frontend Context
 
@@ -293,7 +308,20 @@ The following functions are part of the core language system and are defined in 
 
 These functions form the foundation of the static translation system and are used throughout the core templates and admin panel.
 
-## 14. Next Steps
+## 14. Operational Checks
+
+- [ ] Every core module file returns an array and contains no output before `return`.
+- [ ] Keys use dot notation only for actual nested arrays, not as literal key names.
+- [ ] A plugin string uses `plugin:{slug}` and resolves after activation.
+- [ ] Deactivating the plugin does not remove core translations.
+- [ ] `getLocale()` is first called after `loadPlugins()` on admin requests.
+- [ ] `admin_locale` rejects unknown locales instead of caching them.
+- [ ] The `<html lang>` attribute matches the resolved locale.
+- [ ] Missing keys are visible in development, not silently blank.
+
+If a translated page shows a key instead of text, test the exact `__()` call in isolation. Check the module name first, the locale directory second, and the key path third. Editing the language file will not help if the caller is loading the wrong module.
+
+## 15. Next Steps
 
 After understanding the core language pack system, continue with:
 

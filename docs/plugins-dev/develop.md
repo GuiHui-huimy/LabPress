@@ -17,6 +17,22 @@ Creating a LabPress plugin involves the following steps:
 
 This guide creates a simple plugin called **My First Plugin**. The plugin adds a custom message to the frontend footer, modifies news titles through a filter, and registers a basic admin page.
 
+```mermaid
+flowchart TD
+    A[Create plugins/my-first-plugin] --> B[plugin.php header]
+    B --> C[Register lifecycle hooks]
+    C --> D[Register init callbacks]
+    D --> E[Optional admin page]
+    E --> F[Optional language files]
+    F --> G[Scan in admin]
+    G --> H{Activate}
+    H -->|plugin_install exists| I[Create schema]
+    I --> J[plugin_installed]
+    H --> K[plugin_activation]
+    J --> L[Frontend + admin callbacks active]
+    K --> L
+```
+
 ## 2. Directory and Plugin Header
 
 Every plugin must reside in its own directory under `plugins/`. The directory name is the plugin slug and must be unique across the installation.
@@ -132,7 +148,16 @@ The admin page appears in the sidebar under the title **My First Plugin**. Only 
 
 Plugins can use lifecycle hooks to create and remove database tables or other persistent data.
 
-### 5.1 Activation Hook
+### 5.1 Which activation path runs
+
+There are two related but distinct activation paths:
+
+- If the plugin defines a function named `plugin_install()`, the core calls it once during activation and then fires `plugin_installed`.
+- The core always fires `plugin_activation` after the status update.
+
+Use `plugin_install()` for schema creation that should happen once, and `plugin_activation` for lightweight runtime registration that must also run on every activation. Both must be idempotent: a manual deactivate/reactivate cycle can call them again.
+
+### 5.2 Activation Hook
 
 The `plugin_activation` action is fired when the plugin is activated. The callback receives the plugin slug.
 
@@ -153,9 +178,9 @@ LabPress_Hooks::addAction('plugin_activation', function($slug) {
 
 This hook should be registered outside the `init` callback so that it is available before plugin initialization when activation occurs. In this example, place it near the top of `plugin.php`, after the header comment.
 
-### 5.2 Uninstall Hook
+### 5.3 Uninstall Hook
 
-The `plugin_uninstalled` action is fired before the plugin directory is removed. Use it to delete the table.
+The `plugin_uninstalled` action is fired before the plugin directory is removed. It is also fired during deactivation if `plugin_uninstall()` exists. Treat it as potentially destructive and make it safe to run more than once.
 
 ```php
 LabPress_Hooks::addAction('plugin_uninstalled', function($slug) {
@@ -310,7 +335,26 @@ If the plugin does not appear after scanning:
 - Use `plugin:my-first-plugin` as the second parameter of `__()`.
 - Check that the language keys in the plugin file match the keys used in the code.
 
-## 10. Next Steps
+### 9.5 Plugin Fails After Activation
+
+- Check PHP error logs before assuming a hook problem.
+- Confirm the plugin header parses and the slug is valid.
+- Deactivate the plugin, then confirm the site recovers.
+- If schema creation failed, inspect `plugin_install()` and the database user's DDL permissions.
+- If strings are raw keys, confirm the plugin language file is readable and the locale directory exists.
+
+## 10. Operational Checks
+
+- [ ] The plugin header is the first PHP comment in `plugin.php`.
+- [ ] The slug uses only letters, numbers, hyphens, and underscores.
+- [ ] Runtime hooks are registered on `init`.
+- [ ] Lifecycle hooks are registered at file scope.
+- [ ] `plugin_install()` is idempotent and uses `CREATE TABLE IF NOT EXISTS`.
+- [ ] `plugin_uninstalled` tolerates a missing table.
+- [ ] The admin page permission matches the intended audience.
+- [ ] A deactivate/reactivate cycle does not duplicate data or fatal.
+
+## 11. Next Steps
 
 After building your first plugin, consider exploring the following resources:
 
