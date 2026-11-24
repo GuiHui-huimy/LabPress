@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `admin_locale` filter in `getLocale()` for an optional, plugin-owned backend locale policy. The core falls back to the site default locale when no plugin handles the filter.
 - `admin_topbar_actions` action in the admin topbar, allowing plugins to add compact controls such as a language switcher.
 - Dynamic Multi-Language 2.0.2: backend language selection in the login page and admin topbar, persisted in a dedicated `ml_admin_locale` session/cookie, independent from the frontend `lang` cookie.
+- Frontend navigation account entry: a login button sends visitors to the admin login and returns them to the homepage after success; logged-in users see their username with a hover menu of admin shortcuts.
 
 ### Changed
 

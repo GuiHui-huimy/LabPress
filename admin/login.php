@@ -1,7 +1,12 @@
 <?php
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
-if (isset($_SESSION['user'])) { header('Location: index.php'); exit; }
+$requestedRedirect = is_string($_GET['redirect'] ?? null) ? $_GET['redirect'] : '';
+if (isset($_SESSION['user'])) {
+    $redirect = ($requestedRedirect === 'home') ? '../index.php' : 'index.php';
+    header('Location: ' . $redirect);
+    exit;
+}
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'] ?? '';
@@ -12,7 +17,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($user && password_verify($password, $user['password_hash'])) {
         $_SESSION['user'] = $user['username'];
         $_SESSION['permissions'] = json_decode($user['permissions'], true);
-        $redirectUrl = LabPress_Hooks::applyFilters('login_redirect_url', 'index.php');
+        $redirectTarget = is_string($_POST['redirect'] ?? null) ? $_POST['redirect'] : $requestedRedirect;
+        $redirectUrl = ($redirectTarget === 'home') ? '../index.php' : 'index.php';
+        $redirectUrl = LabPress_Hooks::applyFilters('login_redirect_url', $redirectUrl);
         header('Location: ' . $redirectUrl);
         exit;
     } else {
@@ -84,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php LabPress_Hooks::doAction('login_before_form'); ?>
 
             <form id="loginForm" method="post" action="" novalidate>
+                <input type="hidden" name="redirect" value="<?= e($requestedRedirect) ?>">
 
                 <div class="field">
                     <label for="username"><?= e(__('username', 'admin')) ?> <span class="req">*</span></label>

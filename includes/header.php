@@ -11,6 +11,7 @@ $currentLocale = getLocale();
 $languages = getAvailableLanguages();
 $currentLang = array_values(array_filter($languages, fn($l) => $l['locale'] === $currentLocale));
 $currentLang = !empty($currentLang) ? $currentLang[0] : null;
+$navUserName = (string)($_SESSION['user'] ?? '');
 ?>
 <link rel="stylesheet" href="assets/css/header.css">
 <header class="site-header <?= $isHomePage ? '' : 'scrolled' ?>" id="site-header">
@@ -62,6 +63,38 @@ $currentLang = !empty($currentLang) ? $currentLang[0] : null;
                     </ul>
                 </li>
                 <?php endif; ?>
+
+                <li class="nav-auth">
+                    <?php if ($navUserName !== ''): ?>
+                        <div class="nav-account-menu">
+                            <a class="nav-account" href="admin/index.php" title="<?= e(__('nav_admin')) ?>">
+                                <i class="fas fa-user" aria-hidden="true"></i>
+                                <span><?= e($navUserName) ?></span>
+                                <i class="fas fa-chevron-down nav-account-caret" aria-hidden="true"></i>
+                            </a>
+                            <div class="account-dropdown">
+                                <ul>
+                                    <li><a href="admin/index.php"><?= e(__('nav_admin_dashboard')) ?></a></li>
+                                    <?php if (hasPermission('publications')): ?>
+                                        <li><a href="admin/index.php?view=publications"><?= e(__('nav_admin_publications')) ?></a></li>
+                                    <?php endif; ?>
+                                    <?php if (hasPermission('tools')): ?>
+                                        <li><a href="admin/index.php?view=projects-list"><?= e(__('nav_admin_projects')) ?></a></li>
+                                        <li><a href="admin/index.php?view=tool-list"><?= e(__('nav_admin_tools')) ?></a></li>
+                                    <?php endif; ?>
+                                    <?php if (hasPermission('publications')): ?>
+                                        <li><a href="admin/index.php?view=news"><?= e(__('nav_admin_news')) ?></a></li>
+                                    <?php endif; ?>
+                                </ul>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <a class="nav-login" href="admin/login.php?redirect=home">
+                            <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+                            <span><?= e(__('nav_login')) ?></span>
+                        </a>
+                    <?php endif; ?>
+                </li>
             </ul>
         </nav>
         <?php LabPress_Hooks::doAction('after_nav'); ?>

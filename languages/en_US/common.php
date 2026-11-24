@@ -14,6 +14,15 @@ return [
     // 语言切换
     'language_label'   => 'Language',
 
+    // Front-end account entry
+    'nav_login'        => 'Sign in',
+    'nav_admin'        => 'Admin Panel',
+    'nav_admin_dashboard'    => 'Dashboard',
+    'nav_admin_publications' => 'Publications',
+    'nav_admin_projects'     => 'Projects',
+    'nav_admin_tools'        => 'Tools',
+    'nav_admin_news'         => 'Research News',
+
     // 页脚
     'footer_copyright'   => '© 2017-{year} HUI-MY.LAB. All rights reserved.',
     'footer_open_source' => 'Based on the spirit of open source, dedicated to the development and sharing of bioinformatics tools.',
