@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the Dynamic Multi-Language admin page using the non-existent `original_content` key instead of `ml_original_content`.
 - Fixed missing `ml_no_translations_yet` interface text in the plugin language packs.
 - Fixed hardcoded “个 / 无” strings in the tool version admin view; they now use the `count_unit` and `none` core keys.
+- Fixed the admin language switch being ignored on the first request: `getLocale()` was resolved before `loadPlugins()`, so the `admin_locale` filter had not been registered and the site default locale was cached. Locale resolution now runs after plugins are loaded.
 
 ## [1.1.0] - 2026-08-14
 

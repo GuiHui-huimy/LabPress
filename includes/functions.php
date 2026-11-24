@@ -718,11 +718,13 @@ function isUsingDefaultPassword($username) {
 //=================================================
 //在此处上方修改
 //=================================================
+// 初始化插件系统
+loadPlugins();
+
 // 提前解析语言，保证 ?lang= 的 Cookie 在任何 HTML 输出之前写入
+// 必须在 loadPlugins() 之后执行，让插件的 admin_locale 过滤器先注册
 if (isset($_GET['lang'])) {
     getLocale();
 }
 
-// 初始化插件系统
-loadPlugins();
 LabPress_Hooks::doAction('init');

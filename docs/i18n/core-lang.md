@@ -192,6 +192,8 @@ When the module begins with `plugin:`, the translation function:
 
 This explicit loading method isolates plugin translations and prevents a plugin language file from overwriting core keys. A plugin that is deactivated or whose directory is removed simply has no language callback; core strings keep coming from the root language packs.
 
+Locale resolution order matters for backend language filters. `getLocale()` caches its result for the request, so any early call must happen after `loadPlugins()`. The core entry file resolves a requested `lang` after plugins are loaded; otherwise `admin_locale` callbacks would not be registered yet and the site default locale would be cached first.
+
 ## 7. Key Resolution and Fallback
 
 After the necessary language data has been loaded, the translation function resolves the requested key.
