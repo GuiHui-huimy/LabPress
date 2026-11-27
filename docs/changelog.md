@@ -37,9 +37,17 @@ LabPress 1.2.0 is the kernel and installation release. It hardens the bootstrap,
 - Official plugins `FooterInfo` and `dynamic-multilang` declare `Requires LabPress: >=1.2.0`; the multilingual admin CSS now goes through the asset registry.
 - Plugin install endpoints call discovery after extraction so new plugins are registered before activation.
 
+### Fixed
+
+- Fixed `DemoData::seedNews()` binding an associative row to positional placeholders, which caused `SQLSTATE[HY093]` during demo installation.
+- Fixed the ECharts bundle being placed under the ignored `admin/assets/vendor/` path; it now ships from `admin/assets/js/echarts.min.js`.
+- Fixed the installer username `pattern` being invalid under Chromium's `v` regular-expression mode by escaping the `-` inside the character class.
+- Fixed the demo `FooterInfo` plugin row writing `status` and `requires_core` in the wrong order; demo installs now leave `FooterInfo` active and `dynamic-multilang` inactive.
+
 ### Notes
 
-- **New install:** open `/install.php` and use an empty database.
+- **New install:** upload the release to the web root, make `storage/` writable by PHP, then open `/install.php`. The installer accepts database host/port/socket/name/user/password, site name/URL, language, administrator credentials, and an optional demo checkbox. It creates the database when permitted, builds the schema, runs migrations, writes `storage/config/site.php`, and writes `storage/install.lock`.
+- **CLI install:** `php bin/install.php --db-host=... --db-name=... --db-user=... --db-pass=... --site-url=... --admin-username=... --admin-password=... [--demo|--no-demo]`.
 - **Existing sites:** do not run the installer; deploy the files and run `php bin/migrate.php up` before opening the admin panel.
 - The `categories` table is renamed to `categories_legacy` on existing sites, not dropped. Fresh installs do not create it.
 - `storage/` must be writable by PHP and blocked from direct web access. Apache uses the included `.htaccess`; Nginx needs an explicit `location` rule.
