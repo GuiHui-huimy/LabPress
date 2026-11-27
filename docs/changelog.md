@@ -22,6 +22,7 @@ LabPress 1.3.0 is the plugin-contract and i18n release. It establishes a stable 
 - `languages/ja_JP/locale.json` plus Japanese fallback metadata; plugin language paths now prefer `plugins/{slug}/languages/{locale}/{domain}.php` with legacy fallback.
 - Footer Info 3.0: slug `footer-info` (legacy `FooterInfo` alias migration), Settings API form, old `footer_info` data migration into `plugins.settings_json`, and zero-loss legacy data retention.
 - `tools/i18n-check.php` for CI literal-key coverage across `zh_CN` / `en_US` / `ja_JP`.
+- `tools/lint-plugin.php` for manifest/header validation and version-sync checks in CI.
 - Migrations `20261127_0002_i18n_v2`, `20261127_0003_footer_info_slug`, and `20261127_0004_official_plugin_versions`; `install/Schema.php` includes the v2 translation columns.
 
 ### Changed
