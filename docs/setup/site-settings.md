@@ -8,7 +8,7 @@ The information in this chapter is intended for site administrators who are resp
 
 The Site Config page is the central place for configuring the identity and homepage content of a LabPress site. All values edited on this page are stored in the `site_config` table, which is the primary configuration store for business-level settings.
 
-Unlike the environment configuration file `includes/config.php`, which contains database credentials and PHP-level constants, the Site Config page is designed to be edited through the browser without requiring direct file access.
+Unlike the environment configuration file `storage/config/site.php`, which contains database credentials and deployment-level settings, the Site Config page is designed to be edited through the browser without requiring direct file access.
 
 This page provides controls for the following areas:
 

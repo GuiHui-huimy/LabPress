@@ -94,14 +94,29 @@ Or download the ZIP package and extract it to your web root directory.
 
 ### 2. Configure Database
 
-Edit `includes/config.php` and fill in your database connection details:
+Copy the v1.2.0 configuration template and fill in your database connection details:
+
+```bash
+cp storage/config/site.example.php storage/config/site.php
+```
 
 ```php
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'your_database_name');
-define('DB_USER', 'your_database_user');
-define('DB_PASS', 'your_database_password');
+<?php
+// storage/config/site.php
+return [
+    'db' => [
+        'host' => 'localhost',
+        'name' => 'your_database_name',
+        'user' => 'your_database_user',
+        'pass' => 'your_database_password',
+        'charset' => 'utf8mb4',
+    ],
+    'timezone' => 'Asia/Shanghai',
+    'debug' => false,
+];
 ```
+
+`includes/config.php` is kept only as a compatibility fallback for old deployments. New deployments should use `storage/config/site.php`.
 
 ### 3. Import Database
 
@@ -113,14 +128,25 @@ mysql -u username -p database_name < labpressexample.sql
 
 You can also use graphical tools such as phpMyAdmin.
 
+### 3.1 Run Migrations
+
+After importing the sample database, apply the v1.2.0 schema migrations:
+
+```bash
+php bin/migrate.php status
+php bin/migrate.php up
+```
+
 ### 4. Set Permissions (Linux/macOS)
 
 ```bash
 chmod -R 755 uploads/
 chmod -R 755 plugins/
+mkdir -p storage/logs
+chmod -R 775 storage/logs
 ```
 
-If you encounter permission issues, please check your server logs for more details , and ensure that the web server user has read/write permissions on the `uploads` and `plugins` directories.
+If you encounter permission issues, please check your server logs for more details , and ensure that the web server user has read/write permissions on the `uploads`, `plugins`, and `storage/logs` directories.
 
 ### 5. Access the Site
 
@@ -206,12 +232,21 @@ LabPress/
 │ └── easymde.min.js # EasyMDE Markdown editor
 │
 ├── includes/ # Core library & configuration
-│ ├── config.php # Database connection & site constants
+│ ├── config.php # Legacy DB_* fallback; requires bootstrap
+│ ├── bootstrap.php # Autoload, config, session, PDO, errors, assets
 │ ├── functions.php # Core functions (data access, helpers, i18n)
-│ ├── hooks.php # Plugin hook system (LabPress_Hooks)
+│ ├── hooks.php # Backward-compatible LabPress_Hooks wrapper
 │ ├── header.php # Frontend header + navigation
 │ ├── footer.php # Frontend footer
 │ └── labpress.php # LabPress core utility class (config, pages, etc.)
+│
+├── core/ # v1.2.0 kernel classes (Config, Hooks, Guard, Assets, Plugin, Migration)
+├── migrations/ # schema_version migrations
+├── bin/migrate.php # CLI migration runner
+├── storage/ # Deployment config, logs, writable runtime state
+│ ├── config/site.php # ignored, deployment credentials
+│ └── logs/ # app/audit logs
+├── tests/smoke.php # v1.2.0 smoke tests
 │
 ├── languages/ # Core language packs
 │ ├── zh_CN/

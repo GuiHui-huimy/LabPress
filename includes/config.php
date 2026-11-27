@@ -1,27 +1,24 @@
 <?php
-// Start Session
-session_start();
 
-// Database Connect Config ( You shoud input these infomations as your own MySql Server Infomations)
-define('DB_HOST', 'localhost'); //Example : localhost
-define('DB_NAME', 'labpage');   //Example : labpage
-define('DB_USER', 'your user name');// Your Database user name
-define('DB_PASS', 'Password');  // Your Database user password
+/**
+ * v1.2.0 兼容入口。
+ *
+ * 新部署请复制 storage/config/site.example.php 为 storage/config/site.php；
+ * 下面的 DB_* 常量只为旧部署保留回退，不再在这里 session_start/new PDO。
+ * 真正的唯一引导在 includes/bootstrap.php。
+ */
 
-try {
-    $pdo = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
-        DB_USER,
-        DB_PASS,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false
-        ]
-    );
-} catch (PDOException $e) {
-    die("Database Connect Error: " . $e->getMessage());
+if (!defined('DB_HOST')) {
+    define('DB_HOST', 'localhost');
+}
+if (!defined('DB_NAME')) {
+    define('DB_NAME', 'labpress');
+}
+if (!defined('DB_USER')) {
+    define('DB_USER', 'labpress_user');
+}
+if (!defined('DB_PASS')) {
+    define('DB_PASS', 'Password');
 }
 
-// TimeZone
-date_default_timezone_set('Asia/Shanghai');
+require_once __DIR__ . '/bootstrap.php';

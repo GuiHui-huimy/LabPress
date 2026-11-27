@@ -9,21 +9,34 @@ if (isset($_SESSION['user'])) {
 }
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
-    $stmt->execute([$username]);
-    $user = $stmt->fetch();
-    if ($user && password_verify($password, $user['password_hash'])) {
-        $_SESSION['user'] = $user['username'];
-        $_SESSION['permissions'] = json_decode($user['permissions'], true);
-        $redirectTarget = is_string($_POST['redirect'] ?? null) ? $_POST['redirect'] : $requestedRedirect;
-        $redirectUrl = ($redirectTarget === 'home') ? '../index.php' : 'index.php';
-        $redirectUrl = LabPress_Hooks::applyFilters('login_redirect_url', $redirectUrl);
-        header('Location: ' . $redirectUrl);
-        exit;
+    $username = (string)($_POST['username'] ?? '');
+    $password = (string)($_POST['password'] ?? '');
+    if (!\LabPress\Guard::verifyCsrf($_POST['_csrf'] ?? '')) {
+        $error = '会话已过期，请刷新页面重试';
+        \LabPress\Guard::audit('login_csrf_failed', $username, 'denied', ['ip' => \LabPress\Guard::clientIp()]);
+    } elseif (!\LabPress\Guard::loginAllowed($username)) {
+        $error = '尝试次数过多，请 5 分钟后再试';
+        \LabPress\Guard::audit('login_rate_limited', $username, 'denied', ['ip' => \LabPress\Guard::clientIp()]);
     } else {
-        $error = __('login_error', 'admin');
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        $user = $stmt->fetch();
+        if ($user && password_verify($password, $user['password_hash'])) {
+            session_regenerate_id(true);
+            $_SESSION['user'] = $user['username'];
+            $_SESSION['permissions'] = json_decode((string)$user['permissions'], true) ?? [];
+            \LabPress\Guard::clearLoginFailures($username);
+            \LabPress\Guard::audit('login_success', $username, 'ok', ['ip' => \LabPress\Guard::clientIp()]);
+            $redirectTarget = is_string($_POST['redirect'] ?? null) ? $_POST['redirect'] : $requestedRedirect;
+            $redirectUrl = ($redirectTarget === 'home') ? '../index.php' : 'index.php';
+            $redirectUrl = LabPress_Hooks::applyFilters('login_redirect_url', $redirectUrl);
+            header('Location: ' . $redirectUrl);
+            exit;
+        } else {
+            \LabPress\Guard::recordLoginFailure($username);
+            \LabPress\Guard::audit('login_failed', $username, 'denied', ['ip' => \LabPress\Guard::clientIp()]);
+            $error = __('login_error', 'admin');
+        }
     }
 }
 ?>
@@ -92,6 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <form id="loginForm" method="post" action="" novalidate>
                 <input type="hidden" name="redirect" value="<?= e($requestedRedirect) ?>">
+                <input type="hidden" name="_csrf" value="<?= e(lp_csrf_token()) ?>">
 
                 <div class="field">
                     <label for="username"><?= e(__('username', 'admin')) ?> <span class="req">*</span></label>

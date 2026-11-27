@@ -161,13 +161,8 @@ $currentUser = $_SESSION['user'] ?? '';
         $viewFile = 'views/' . $view . '.php';
         if ($viewIsAllowed && file_exists($viewFile)) {
             include $viewFile;
-        } elseif ($viewIsAllowed && isset($pluginPages[$view])) {
-            $pagePerm = $pluginPages[$view]['permission'] ?? 'all';
-            if (!hasPermission($pagePerm)) {
-                echo '<div class="card"><p>' . e(__('no_permission', 'admin')) . '</p></div>';
-            } else {
-                call_user_func($pluginPages[$view]['callback']);
-            }
+        } elseif ($viewIsAllowed && \LabPress\Admin\Registry::has($view)) {
+            \LabPress\Admin\Registry::render($view);
         } else {
             echo '<p class="p-4">' . e(__('page_not_found', 'admin')) . '</p>';
         }

@@ -156,6 +156,7 @@ nav:
     - Installation: getting-started/installation.md
     - Quick Start: getting-started/quick-start.md
     - Configuration: getting-started/configuration.md
+    - v1.2.0 Upgrade: getting-started/upgrade-v1.2.0.md
   - Setup:
     - Site Settings: setup/site-settings.md
     - Navigation Menu: setup/navigation.md

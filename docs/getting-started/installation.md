@@ -1,6 +1,6 @@
 # Installation Guide
 
-This guide walks through a first-time LabPress 1.1.1 installation on a typical PHP/MySQL host. It covers environment checks, source acquisition, database creation, sample-data import, `includes/config.php`, directory permissions, first login, and post-install verification.
+This guide walks through a first-time LabPress 1.2.0 installation on a typical PHP/MySQL host. It covers environment checks, source acquisition, database creation, sample-data import, `storage/config/site.php`, directory permissions, first login, and post-install verification.
 
 If you are upgrading an existing 1.1.0 site rather than installing from scratch, use the [1.1.1 upgrade notes](../changelog.md#upgrade-notes) instead of re-importing the sample database.
 
@@ -12,7 +12,7 @@ LabPress is a flat-file PHP application. There is no installer wizard and no wri
 
 1. the project files in the web root (or a subdirectory);
 2. a MySQL database imported from `labpressexample.sql`;
-3. one deployment-owned `includes/config.php`;
+3. one deployment-owned `storage/config/site.php`;
 4. writable `uploads/` and `plugins/` directories.
 
 The browser-facing entry points are `/index.php` and `/admin/index.php`. The default URL layout assumes the project is installed at the domain root. A subdirectory install works, but relative asset and upload paths should be checked after deployment.
@@ -22,7 +22,7 @@ flowchart TD
     A[Prepare PHP + MySQL] --> B[Download or clone LabPress]
     B --> C[Create empty database]
     C --> D[Import labpressexample.sql]
-    D --> E[Edit includes/config.php]
+    D --> E[Edit storage/config/site.php]
     E --> F[Set uploads/plugins permissions]
     F --> G[Open the public homepage]
     G --> H[Log in to /admin]
@@ -46,7 +46,7 @@ Required PHP extensions:
 | Extension | Why it is needed |
 | --- | --- |
 | `pdo` | Database abstraction. |
-| `pdo_mysql` | MySQL driver used by `includes/config.php`. |
+| `pdo_mysql` | MySQL driver used by the bootstrap PDO connection. |
 | `json` | API payloads, permissions, and plugin metadata. |
 | `mbstring` | Multibyte strings in content and UI helpers. |
 | `session` | Admin login and permission state. |
@@ -104,7 +104,7 @@ LabPress/
 └── README.md
 ```
 
-`includes/config.php` may be absent in a fresh clone because it is deployment-owned. Copy `includes/config-sample.php` to `includes/config.php` before editing if your package does not include one.
+`storage/config/site.php` is absent in a fresh clone because it holds deployment credentials. Copy `storage/config/site.example.php` to `storage/config/site.php` before editing.
 
 ## 3. Database Setup and Sample Data
 
@@ -170,69 +170,60 @@ mysql -u labpress_user -p labpress -e "SHOW TABLES;"
 
 If the command returns no error but the site is empty, confirm that the dump was imported into the same database named in `DB_NAME`.
 
-## 4. Configure `includes/config.php`
+## 4. Configure the Environment
 
-`includes/config.php` is the only file that should contain deployment-specific database credentials. It is intentionally excluded from version control in most deployments.
+`storage/config/site.php` is the v1.2.0 recommended deployment file. It contains database credentials, timezone, session cookie settings, and debug flags. It is ignored by Git and protected by `storage/.htaccess` on Apache.
 
 ### 4.1 Create the file
 
 From the project root:
 
 ```bash
-cp includes/config-sample.php includes/config.php
+cp storage/config/site.example.php storage/config/site.php
 ```
 
-If your package already contains `config.php`, back it up before editing:
+If you upgraded from v1.1.1 and already have working `DB_*` constants in `includes/config.php`, you can keep them temporarily; bootstrap uses them as a fallback. For new deployments, use `storage/config/site.php`.
 
-```bash
-cp includes/config.php includes/config.php.bak
-```
-
-### 4.2 Set the database constants
+### 4.2 Set the database connection
 
 ```php
 <?php
-session_start();
-
-// 1. Database host. Use "localhost" unless MySQL is on another host.
-define('DB_HOST', 'localhost');
-
-// 2. Database name created in the previous step.
-define('DB_NAME', 'labpress');
-
-// 3. Database user with privileges on that database.
-define('DB_USER', 'labpress_user');
-
-// 4. Database password.
-define('DB_PASS', 'replace-with-a-strong-password');
-
-try {
-    $pdo = new PDO(
-        'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
-        DB_USER,
-        DB_PASS,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
-        ]
-    );
-} catch (PDOException $e) {
-    die('Database Connect Error: ' . $e->getMessage());
-}
-
-date_default_timezone_set('Asia/Shanghai');
+// storage/config/site.php
+return [
+    'db' => [
+        'host' => 'localhost',
+        'name' => 'labpress',
+        'user' => 'labpress_user',
+        'pass' => 'replace-with-a-strong-password',
+        'charset' => 'utf8mb4',
+    ],
+    'timezone' => 'Asia/Shanghai',
+    'debug' => false,
+    'session' => [
+        'name' => '',
+        'same_site' => 'Lax',
+        'secure' => null,
+    ],
+];
 ```
 
-The exact constant names and comments in `config-sample.php` are authoritative. Keep the PDO options unless you have a specific reason to change them.
+`includes/bootstrap.php` is the only place that starts the session and creates the PDO connection. `includes/config.php` is retained only as a compatibility shim for old deployments that still define `DB_*` constants.
 
-### 4.3 Security rules for `config.php`
+### 4.3 Run the migration
 
-- Never commit real credentials. Add `includes/config.php` to `.gitignore` if it is not already ignored.
-- Do not include `config.php` in a public release ZIP.
-- Do not run `git reset --hard` or `git checkout -- includes/config.php` on a server where the file contains production credentials. Use skip-worktree or a deployment secret instead.
-- Restrict direct HTTP access to `includes/` at the web-server level where possible.
-- Rotate the database password if the file was ever exposed.
+```bash
+php bin/migrate.php status
+php bin/migrate.php up
+```
+
+The first run creates `schema_version`. If the database was imported from the v1.1.1 sample dump, the migration is additive; it does not drop user content.
+
+### 4.4 Security rules
+
+- Never commit real credentials. `storage/config/site.php` is already ignored.
+- Do not include `storage/` in a public release ZIP.
+- Keep `storage/logs/` writable by PHP but not web-accessible.
+- For Nginx deployments, add a `location ^~ /storage/ { deny all; }` rule manually.
 
 ## 5. Directory Permissions
 
@@ -241,12 +232,14 @@ The PHP process must be able to write uploaded images and plugin packages. Read 
 ```bash
 chmod -R 755 uploads/
 chmod -R 755 plugins/
+mkdir -p storage/logs
+chmod -R 775 storage/logs
 ```
 
 If the web server runs as a dedicated user, set ownership explicitly:
 
 ```bash
-chown -R www-data:www-data uploads plugins
+chown -R www-data:www-data uploads plugins storage/logs
 ```
 
 On a BaoTa-style panel, the site user may be `www`; use the actual PHP-FPM user. Avoid `777` on production. If uploads fail, check:
@@ -264,7 +257,7 @@ Open the public site:
 https://your-domain/
 ```
 
-You should see the demo homepage with slides, projects, publications, tools, and news. If the page is blank or reports `Database Connect Error`, fix `includes/config.php` before continuing.
+You should see the demo homepage with slides, projects, publications, tools, and news. If the page is blank or reports `Database Connect Error`, fix `storage/config/site.php` (or the legacy `DB_*` constants) before continuing.
 
 The administration panel is at:
 
@@ -293,7 +286,7 @@ The sample database creates one administrator:
 - [ ] `/admin/login.php` loads and accepts the sample login.
 - [ ] The default password has been changed.
 - [ ] `uploads/` and `plugins/` are writable by PHP.
-- [ ] `includes/config.php` is not web-accessible.
+- [ ] `storage/config/site.php` and `storage/logs/` are not web-accessible.
 - [ ] HTTPS is enabled and the admin cookie is sent over HTTPS.
 - [ ] The site name, title, and footer are correct under **Settings → Site Config**.
 - [ ] The navigation menu points to the intended pages.
@@ -304,7 +297,7 @@ The sample database creates one administrator:
 
 - Use HTTPS for both frontend and admin. A valid certificate is not optional for a site with logins.
 - Change the sample `root` password before exposing the site to the internet.
-- Keep `includes/config.php` outside version control and outside public backups where possible.
+- Keep `storage/config/site.php` outside version control and outside public backups where possible.
 - Restrict `includes/`, `docs/`, and `labpressexample.sql` at the web-server level. None of them need to be publicly downloadable.
 - Back up the database and `uploads/` together; restoring only the database leaves broken image references.
 - Keep PHP and MySQL patched. The application has no autoloader or third-party framework to update, but the runtime still needs maintenance.
@@ -314,7 +307,7 @@ The sample database creates one administrator:
 
 ### The page is blank or reports a database error
 
-Check `includes/config.php` first. Confirm `DB_HOST`, `DB_NAME`, `DB_USER`, and `DB_PASS`; then confirm `pdo_mysql` is enabled. Temporarily enable PHP error display only in a local environment, never on a public production site.
+Check `storage/config/site.php` first. Confirm the `db` host/name/user/pass values; then confirm `pdo_mysql` is enabled. Temporarily enable PHP error display only in a local environment, never on a public production site.
 
 ### SQL import fails with a collation error
 
@@ -334,7 +327,7 @@ Use `/admin/login.php?lang=zh_CN` as a direct test. If the HTML still reports `l
 
 ### `git pull` refuses because local files changed
 
-Do not discard `includes/config.php`. Inspect the changed files, stash only the disposable edits, pull, then restore the stash. On a server where `config.php` is skip-worktree, never use `git reset --hard` as a shortcut.
+Do not discard `storage/config/site.php`. Inspect the changed files, stash only the disposable edits, pull, then restore the stash. Never use `git reset --hard` on a server where the config contains production credentials.
 
 ## 9. Next Steps
 

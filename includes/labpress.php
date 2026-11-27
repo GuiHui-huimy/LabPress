@@ -1,45 +1,57 @@
 <?php
-class LabPress {
-    public static function db() {
+require_once __DIR__ . '/bootstrap.php';
+
+class LabPress
+{
+    private static ?array $siteConfig = null;
+
+    public static function db()
+    {
         global $pdo;
         return $pdo;
     }
 
-    public static function config($key, $default = '') {
-        static $config = null;
-        if ($config === null) {
-            $config = getSiteConfig();   // functions.php 中的函数
+    public static function config($key, $default = '')
+    {
+        if (self::$siteConfig === null) {
+            self::$siteConfig = getSiteConfig();
         }
-        return $config[$key] ?? $default;
+        return self::$siteConfig[$key] ?? $default;
     }
 
-    public static function setConfig($key, $value) {
+    public static function setConfig($key, $value)
+    {
+        if (!\LabPress\SiteConfig::isAllowed((string)$key)) {
+            throw new \InvalidArgumentException('Unknown site_config key: ' . $key);
+        }
         $db = self::db();
         $stmt = $db->prepare("INSERT INTO site_config (config_key, config_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)");
         $stmt->execute([$key, $value]);
+        if (self::$siteConfig !== null) {
+            self::$siteConfig[(string)$key] = $value;
+        }
     }
 
-    public static function registerAdminPage($slug, $title, $callback, $permission = 'all') {
-        global $labpress_plugin_pages;
-        if (!is_array($labpress_plugin_pages)) $labpress_plugin_pages = [];
-        $labpress_plugin_pages[$slug] = compact('title', 'callback', 'permission');
+    /**
+     * 注册后台页面。v1.2.0 起统一进入 Admin\Registry，不再维护全局数组。
+     */
+    public static function registerAdminPage($slug, $title, $callback, $permission = 'all', $capability = null, $parent = null)
+    {
+        \LabPress\Admin\Registry::register((string)$slug, (string)$title, $callback, (string)$permission, $capability, $parent);
     }
 
-    public static function getAdminPages() {
-        global $labpress_plugin_pages;
-        return $labpress_plugin_pages ?? [];
+    public static function getAdminPages()
+    {
+        return \LabPress\Admin\Registry::all();
     }
 
-    // 注册资源钩子辅助函数
-    public static function enqueueStyle($url) {
-        LabPress_Hooks::addAction('before_head_end', function() use ($url) {
-            echo '<link rel="stylesheet" href="' . htmlspecialchars($url) . '">';
-        });
+    public static function enqueueStyle($url, $deps = [], $version = null, $media = 'all')
+    {
+        \LabPress\Assets::addStyle((string)$url, (array)$deps, $version === null ? null : (string)$version, (string)$media);
     }
 
-    public static function enqueueScript($url) {
-        LabPress_Hooks::addAction('footer_scripts', function() use ($url) {
-            echo '<script src="' . htmlspecialchars($url) . '"></script>';
-        });
+    public static function enqueueScript($url, $deps = [], $version = null, $footer = true)
+    {
+        \LabPress\Assets::addScript((string)$url, (array)$deps, $version === null ? null : (string)$version, (bool)$footer);
     }
 }

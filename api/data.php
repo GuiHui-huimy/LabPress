@@ -70,8 +70,8 @@ try {
             http_response_code(400);
             $data = ['error' => '无效请求类型'];
     }
-} catch (Exception $e) {
-    error_log('[LabPress] data.php failed: ' . $e->getMessage());
+} catch (Throwable $e) {
+    \LabPress\Support\Logger::exception($e, ['stage' => 'api_data']);
     http_response_code(500);
     $data = ['error' => 'Internal error'];
 }

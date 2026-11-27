@@ -166,6 +166,17 @@ try {
             break;
             
         case 'site-config':
+            if (!is_array($data)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'error' => '配置数据格式错误']);
+                exit;
+            }
+            $invalidKeys = array_values(array_filter(array_keys($data), static fn($key) => !\LabPress\SiteConfig::isAllowed((string)$key)));
+            if ($invalidKeys !== []) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'error' => '不支持的配置键', 'invalid_keys' => $invalidKeys]);
+                exit;
+            }
             foreach ($data as $key => $value) {
                 $stmt = $pdo->prepare("INSERT INTO site_config (config_key, config_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)");
                 $stmt->execute([$key, $value]);
@@ -261,40 +272,22 @@ try {
                 LabPress_Hooks::doAction("admin_after_plugins_{$action}", $slug);
                 exit;
             } elseif ($action === 'activate') {
-                // 更新数据库状态
-                $stmt = $pdo->prepare("UPDATE plugins SET status = 1 WHERE slug = ?");
-                $stmt->execute([$slug]);
-
-                // 调用插件的安装函数（如果存在）
-                $pluginFile = __DIR__ . '/../plugins/' . $slug . '/plugin.php';
-                if (file_exists($pluginFile)) {
-                    require_once $pluginFile;
-                    if (function_exists('plugin_install')) {
-                        plugin_install();
-                        LabPress_Hooks::doAction('plugin_installed', $slug);   // 安装后钩子
-                    }
+                // v1.2.0：统一走 Plugin Manager，生命周期幂等，异常隔离。
+                $ok = \LabPress\Plugin\Manager::activate($slug);
+                if (!$ok) {
+                    http_response_code(404);
+                    echo json_encode(['success' => false, 'error' => '插件不存在']);
+                    exit;
                 }
-
-                // 激活后钩子
-                LabPress_Hooks::doAction('plugin_activation', $slug);
                 echo json_encode(['success' => true]);
             } elseif ($action === 'deactivate') {
-                // 更新数据库状态
-                $stmt = $pdo->prepare("UPDATE plugins SET status = 0 WHERE slug = ?");
-                $stmt->execute([$slug]);
-
-                // 调用插件的卸载函数（如果存在）
-                $pluginFile = __DIR__ . '/../plugins/' . $slug . '/plugin.php';
-                if (file_exists($pluginFile)) {
-                    require_once $pluginFile;
-                    if (function_exists('plugin_uninstall')) {
-                        plugin_uninstall();
-                        LabPress_Hooks::doAction('plugin_uninstalled', $slug); // 卸载后钩子
-                    }
+                // 停用只触发 plugin_deactivation，不再调用卸载逻辑。
+                $ok = \LabPress\Plugin\Manager::deactivate($slug);
+                if (!$ok) {
+                    http_response_code(404);
+                    echo json_encode(['success' => false, 'error' => '插件不存在']);
+                    exit;
                 }
-
-                // 停用后钩子
-                LabPress_Hooks::doAction('plugin_deactivation', $slug);
                 echo json_encode(['success' => true]);
             } else {
                 echo json_encode(['success' => false, 'error' => '无效操作']);
@@ -316,13 +309,13 @@ try {
     LabPress_Hooks::doAction("admin_after_{$type}_{$action}", $data, true);
 
     echo json_encode(['success' => true]);
-} catch (Exception $e) {
+} catch (Throwable $e) {
     // ========== 操作失败后的动作 ==========
     LabPress_Hooks::doAction("admin_after_{$action}", $type, $data, false);
     LabPress_Hooks::doAction("admin_after_{$type}_{$action}", $data, false);
 
     // 详情只写日志，不返回给客户端
-    error_log('[LabPress] save failed (' . $type . '/' . $action . '): ' . $e->getMessage());
+    \LabPress\Support\Logger::exception($e, ['stage' => 'api_save', 'type' => $type, 'action' => $action]);
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => 'Internal error']);
 }

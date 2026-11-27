@@ -96,9 +96,9 @@ The plugin uninstall process validates the plugin slug using a strict pattern th
 
 ### 2.8 Configuration Protection
 
-The database configuration file `includes/config.php` contains sensitive credentials. It is not intended to be committed to version control.
+The database configuration file `storage/config/site.php` contains sensitive credentials. It is not intended to be committed to version control.
 
-The repository includes a `.gitignore` rule that excludes `config.php`. Administrators should verify that this file is not exposed publicly and that the web server is configured to deny direct access to PHP files inside the `includes/` directory.
+The repository excludes `storage/config/site.php` and `storage/logs/*.log`; `storage/.htaccess` denies direct Apache access to the whole directory. Nginx deployments must add an equivalent `location ^~ /storage/ { deny all; }` rule. `includes/config.php` remains only as a legacy `DB_*` fallback and should not receive new production passwords.
 
 ## 3. Production Deployment Recommendations
 
@@ -183,7 +183,7 @@ When deploying LabPress in a shared or public environment, treat the admin panel
 ## 6. Operational Checks
 
 - [ ] The default `root` password has been changed.
-- [ ] `includes/config.php` is outside version control and not web-readable.
+- [ ] `storage/config/site.php` and `storage/logs/` are outside version control and not web-readable.
 - [ ] HTTPS is enabled and session cookies are marked `HttpOnly` and `SameSite=Lax`.
 - [ ] Only trusted users hold `all` or content-edit permissions.
 - [ ] `uploads/`, `plugins/`, and `images/` are not directly executable.

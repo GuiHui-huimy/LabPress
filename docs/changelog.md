@@ -4,6 +4,40 @@ All notable changes to LabPress are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Versions are ordered from newest to oldest.
 
+## [1.2.0] - 2026-11-26
+
+LabPress 1.2.0 is the kernel release. It does not add a marketplace UI; it hardens the bootstrap, database migrations, plugin lifecycle, admin routing, permissions, errors, and asset loading that later releases depend on.
+
+### Added
+
+- `includes/bootstrap.php` as the single entry for autoload, application config, session, PDO, timezone, error handling, and asset hooks.
+- `storage/config/site.php` (ignored by Git and protected by `.htaccess`) plus `storage/config/site.example.php` and `storage/config/features.php`.
+- `schema_version` and `bin/migrate.php` with `status`, `up`, and `down` commands. Three initial migrations add plugin metadata columns, extend the multilingual translation contract, and archive the unused `categories` table.
+- Hook Engine v2: `removeAction` / `removeFilter`, `hasAction` / `hasFilter`, `didAction`, `currentHook`, `collect`, `acceptedArgs`, exception isolation, and plugin-scoped lifecycle actions.
+- Plugin Manager v1: discovery, metadata refresh, priority boot, activate/deactivate/uninstall lifecycle, `Requires LabPress` compatibility, and per-plugin context filtering.
+- Admin Registry: plugins register admin pages through `LabPress::registerAdminPage()`; the core checks login, permission/capability, and catches page exceptions.
+- Guard: session-level login throttling, CSRF verification, same-origin checks for write requests, audit logging, and unified login/logout events.
+- Logger, ErrorCode, and JSON `Response` envelope with `request_id`; API exceptions now go to `storage/logs/app-*.log` instead of leaking SQL/path detail.
+- Asset registry: `LabPress::enqueueStyle()` / `enqueueScript()` with URL de-duplication and dependency ordering.
+- `tests/smoke.php` and a GitHub Actions workflow covering syntax, migrations, smoke checks, and HTTP availability.
+- `site_config` key whitelist via `LabPress\SiteConfig`; unknown keys are rejected instead of being written blindly.
+
+### Changed
+
+- `includes/config.php` no longer starts a session or creates a PDO connection. It only defines `DB_*` fallbacks and requires the bootstrap.
+- `includes/functions.php` now delegates `getActivePlugins()`, `syncPlugins()`, and `loadPlugins()` to the Plugin Manager, and `hasPermission()` / CSRF helpers to Guard.
+- `api/save.php` plugin activate/deactivate now uses the Plugin Manager lifecycle instead of raw SQL plus `require_once`.
+- `admin/index.php` renders plugin pages through the Admin Registry.
+- Official plugins `FooterInfo` and `dynamic-multilang` declare `Requires LabPress: >=1.2.0`; the multilingual admin CSS now goes through the asset registry.
+- Plugin install endpoints call discovery after extraction so new plugins are registered before activation.
+
+### Notes
+
+- This is a schema-migrating release. Run `php bin/migrate.php up` after deploying and before opening the admin panel.
+- The `categories` table is renamed to `categories_legacy`, not dropped. Verify no custom code reads it before removing it manually.
+- `storage/` must be writable by PHP and blocked from direct web access. Apache uses the included `.htaccess`; Nginx needs an explicit `location` rule.
+- Marketplace UI and one-click remote installation remain out of scope until v1.3.0 Manifest v2 and the v1.4.0 client work.
+
 ## [1.1.1] - 2026-11-24
 
 LabPress 1.1.1 is a maintenance and integration release. It does not add a new database schema or a new top-level module; instead, it tightens the boundary between the core and plugins, makes the admin language setting genuinely independent from the frontend, and completes the public navigation with an account entry.

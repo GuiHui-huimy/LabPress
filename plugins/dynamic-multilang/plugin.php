@@ -4,6 +4,7 @@
  * Description: 为导航菜单、页脚链接、轮播图、关于我们、研究方向提供动态多语言翻译管理。
  * Version: 2.0.2
  * Author: LabPress Community
+ * Requires LabPress: >=1.2.0
  * version: 2.0.2 change 2026-11-24
  *      - add plugin-owned admin locale filter, login/admin switchers, and isolated plugin language loading.
  * version: 2.0.1 change 2026-08-14
@@ -101,7 +102,7 @@ function ml_admin_assets() {
     if (!defined('IS_ADMIN') && strpos($_SERVER['SCRIPT_NAME'] ?? '', '/admin/') === false) {
         return;
     }
-    echo '<link rel="stylesheet" href="../plugins/dynamic-multilang/assets/dm-admin.css">';
+    LabPress::enqueueStyle('../plugins/dynamic-multilang/assets/dm-admin.css', [], '2.0.2');
 }
 LabPress_Hooks::addAction('before_head_end', 'ml_admin_assets');
 LabPress_Hooks::addAction('admin_before_head_end', 'ml_admin_assets');

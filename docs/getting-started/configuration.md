@@ -4,71 +4,83 @@ This chapter explains how LabPress stores and resolves configuration. It is aime
 
 For procedural setup, use [Installation](installation.md); for first-run checks, use [Quick Start](quick-start.md).
 
-## 1. Two Configuration Layers
+## 1. Configuration Layers
 
 | Layer | Storage | Examples | Edited by |
 | --- | --- | --- | --- |
-| Environment | `includes/config.php` | Database host/name/user/password, PHP session start, time zone | Server operator, via file editor or deployment secret |
+| Environment | `storage/config/site.php` (v1.2.0 推荐) | Database host/name/user/password, timezone, session cookie, debug | Server operator, via file editor or deployment secret |
+| Compatibility | `includes/config.php` | `DB_*` constants fallback for v1.1.1 deployments | Server operator |
 | Site | `site_config` table | Site name, browser title format, default language, About Us, statistics, research cards | Administrator, via **Settings → Site Config** |
 | Plugin state | `plugins` table + plugin files | Enabled/disabled status, plugin header metadata | Administrator, via **Plugins** |
 | Runtime | PHP INI / FPM pool | Upload size, memory, execution time, error display | Hosting panel or `php.ini` |
 
-Keep credentials in `config.php`, not in `site_config`. Keep editorial content in `site_config`, not in PHP files. This separation makes the database portable and keeps secrets out of admin exports.
+Keep credentials in `storage/config/site.php`, not in `site_config`. Keep editorial content in `site_config`, not in PHP files. This separation makes the database portable and keeps secrets out of admin exports.
 
 ```mermaid
 flowchart LR
     A[Browser request] --> B[includes/config.php]
-    B --> C[PDO + session]
-    C --> D[includes/functions.php]
-    D --> E[loadPlugins]
-    E --> F[site_config + plugin state]
+    B --> C[includes/bootstrap.php]
+    C --> D[Config + session + PDO]
+    D --> E[includes/functions.php]
+    E --> F[Plugin Manager + site_config]
     F --> G[Page render]
     G --> H[Admin or frontend output]
 ```
 
 ## 2. Environment Configuration
 
-`includes/config.php` is deployment-owned. It performs four jobs:
+v1.2.0 起，`includes/config.php` 只保留兼容常量和 `require_once includes/bootstrap.php`。真正的引导由 `includes/bootstrap.php` 完成：
 
-1. starts the PHP session;
-2. defines the database constants;
-3. creates the shared PDO connection;
-4. sets the default time zone.
+1. 注册 `LabPress\` 命名空间 autoload；
+2. 合并 `storage/config/site.php`、`DB_*` 常量和环境变量；
+3. 启动唯一一次 session；
+4. 创建唯一一个共享 PDO；
+5. 设置时区和错误/日志处理。
+
+推荐配置：
 
 ```php
 <?php
-session_start();
-
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'labpress');
-define('DB_USER', 'labpress_user');
-define('DB_PASS', 'replace-with-a-strong-password');
-
-try {
-    $pdo = new PDO(
-        'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
-        DB_USER,
-        DB_PASS,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
-        ]
-    );
-} catch (PDOException $e) {
-    die('Database Connect Error: ' . $e->getMessage());
-}
-
-date_default_timezone_set('Asia/Shanghai');
+// storage/config/site.php
+return [
+    'db' => [
+        'host' => 'localhost',
+        'name' => 'labpress',
+        'user' => 'labpress_user',
+        'pass' => 'replace-with-a-strong-password',
+        'charset' => 'utf8mb4',
+    ],
+    'timezone' => 'Asia/Shanghai',
+    'debug' => false,
+    'session' => [
+        'name' => '',
+        'same_site' => 'Lax',
+        'secure' => null,
+    ],
+];
 ```
+
+复制 `storage/config/site.example.php` 为 `storage/config/site.php` 后填写。该文件已被 `.gitignore` 忽略，`storage/.htaccess` 也会阻止 Apache 直接访问配置和日志目录。
+
+环境变量可以覆盖数据库连接，适合容器/CI：
+
+```bash
+LABPRESS_DB_HOST=127.0.0.1
+LABPRESS_DB_NAME=labpress
+LABPRESS_DB_USER=labpress_user
+LABPRESS_DB_PASS=secret
+LABPRESS_DEBUG=1
+```
+
+旧部署仍可使用 `includes/config.php` 里的 `DB_*` 常量作为回退；但新部署不要再把真实密码写进这个被 Git 跟踪的兼容文件。
 
 Rules:
 
 - `DB_HOST` is usually `localhost`; use a socket or remote host only when the database is not local.
 - `DB_NAME` must contain the imported LabPress schema.
 - `DB_USER` needs `SELECT`, `INSERT`, `UPDATE`, and `DELETE` on the LabPress database. DDL privileges are only needed for manual schema work.
-- Do not change the PDO options unless you understand the consequences. `EMULATE_PREPARES => false` keeps native prepared statements on.
-- `config.php` must not be committed with real credentials. It is intentionally deployment-specific.
+- `EMULATE_PREPARES => false` is set in bootstrap and keeps native prepared statements on.
+- `storage/config/site.php` must not be committed with real credentials.
 
 ## 3. PHP Runtime Settings
 

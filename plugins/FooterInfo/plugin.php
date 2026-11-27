@@ -4,6 +4,7 @@
  * Description: 可编辑页脚信息，支持多行文字、占位符、自定义样式（对齐、大小、颜色、边距）。
  * Version: 2.1.0
  * Author: LabPress Community
+ * Requires LabPress: >=1.2.0
  */
 
 // 安装逻辑（使用闭包，不区分大小写 slug）

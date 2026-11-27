@@ -10,7 +10,7 @@ LabPress is written in plain PHP and MySQL, with no external PHP framework or de
 
 ```mermaid
 flowchart TD
-    A[Entry page or admin view] --> B[includes/config.php]
+    A[Entry page or admin view] --> B[includes/config.php] --> C[includes/bootstrap.php]
     B --> C[includes/functions.php]
     C --> D[includes/hooks.php]
     C --> E[includes/labpress.php]
@@ -72,10 +72,10 @@ Ensure the following are available:
 Copy the sample configuration to the active configuration path:
 
 ```bash
-cp includes/config-sample.php includes/config.php
+cp storage/config/site.example.php storage/config/site.php
 ```
 
-Then update `includes/config.php` with the local database credentials. `includes/config.php` is environment-specific and should not be committed when it contains real passwords. Keep `includes/config-sample.php` as the shareable template.
+Then update `storage/config/site.php` with the local database credentials. `storage/config/site.php` is environment-specific and should not be committed. Keep `storage/config/site.example.php` as the shareable template.
 
 ### 3.3 Import the Sample Database
 
@@ -128,7 +128,7 @@ Frontend pages are standalone PHP files in the project root:
 - `publications.php` – publications listing
 - `category.php` – category-filtered project listing
 
-Each page loads `includes/config.php` and `includes/functions.php`, reads the required data from the database, and renders its own HTML.
+Each page loads `includes/config.php` (which boots `includes/bootstrap.php`) and `includes/functions.php`, reads the required data from the database, and renders its own HTML.
 
 ### 4.2 Admin Panel
 
@@ -161,7 +161,8 @@ Important endpoints:
 
 The `includes/` directory contains shared functions and core classes:
 
-- `config.php` – environment and database configuration
+- `storage/config/site.php` – environment and database configuration
+- `includes/bootstrap.php` – autoload, session, PDO, error handling
 - `functions.php` – core helper functions, translation, data access, and plugin loading
 - `hooks.php` – `LabPress_Hooks` class implementing actions and filters
 - `labpress.php` – `LabPress` static utility class
@@ -229,7 +230,7 @@ Static methods:
 
 ### 6.1 PHP Error Display
 
-During development, it is recommended to enable detailed error reporting temporarily in `config.php` or through the PHP environment.
+During development, set `debug => true` in `storage/config/site.php` or set the `LABPRESS_DEBUG=1` environment variable. Never enable debug display in production.
 
 ```php
 ini_set('display_errors', 1);
@@ -263,7 +264,7 @@ LabPress does not currently enforce a formal code style through automated tools.
 - Use PHP tags with `<?php` and `?>` only when necessary. Pure PHP files should omit the closing `?>` tag when possible.
 - Use prepared statements for all database queries.
 - Escape output with `htmlspecialchars()` where user-visible data is rendered.
-- Use `define()` for environment constants in `config.php`.
+- Use the returned array in `storage/config/site.php` for deployment values; `DB_*` constants remain only as a legacy fallback.
 - Use arrays with the short syntax `[]`.
 
 ### 7.2 JavaScript
@@ -315,7 +316,7 @@ Use meaningful commit messages and keep unrelated changes in separate commits. F
 
 When contributing to the repository, keep the following points in mind:
 
-- Do not commit `config.php` if it contains real credentials.
+- Do not commit `storage/config/site.php` if it contains real credentials.
 - Do not commit uploaded images from local testing unless they are intended as sample content.
 - Ensure that new plugins have a valid header comment.
 - Keep language files up to date when new interface strings are added.
@@ -329,7 +330,7 @@ For security vulnerabilities, follow the process described in `SECURITY.md`. Do 
 
 ## 11. Operational Checks
 
-- [ ] `includes/config-sample.php` exists and `includes/config.php` is local-only.
+- [ ] `storage/config/site.example.php` exists and `storage/config/site.php` is local-only.
 - [ ] The PHP extensions listed in section 3.1 are enabled.
 - [ ] The sample dump imports without a collation error.
 - [ ] The default password is changed before any non-local exposure.

@@ -3,11 +3,6 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/hooks.php';
 require_once __DIR__ . '/labpress.php';
 
-// 版本号（发布前由维护者更新；后台页脚与登录页展示用）
-if (!defined('LABPRESS_VERSION')) {
-    define('LABPRESS_VERSION', '1.1.1');
-}
-
 // ==================== 输出与请求助手（v1.1.1） ====================
 
 /**
@@ -18,21 +13,9 @@ function e($value) {
 }
 
 /**
- * 会话 Cookie 加固：config.php 负责 session_start，这里补 HttpOnly / SameSite
+ * 会话 Cookie 由 includes/bootstrap.php 统一设置（HttpOnly/SameSite/Secure）。
+ * v1.2.0 起不再在函数库里二次 setcookie，避免把 Secure 覆盖掉。
  */
-function lp_harden_session_cookie() {
-    if (session_status() !== PHP_SESSION_ACTIVE || headers_sent() || session_id() === '') {
-        return;
-    }
-    setcookie(session_name(), session_id(), [
-        'expires'  => 0,
-        'path'     => '/',
-        'httponly' => true,
-        'samesite' => 'Lax',
-    ]);
-}
-
-lp_harden_session_cookie();
 
 /**
  * 生成 <html> 标签的 lang / dir 属性（跟随当前 locale）
@@ -114,49 +97,25 @@ function lp_request_is_same_origin() {
 }
 
 /**
- * 当前会话的 CSRF token
+ * 当前会话的 CSRF token（兼容包装，实际由 Guard 管理）
  */
 function lp_csrf_token() {
-    if (empty($_SESSION['csrf_token'])) {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
-    return $_SESSION['csrf_token'];
+    return \LabPress\Guard::csrfToken();
 }
 
 /**
  * 校验 CSRF token
  */
 function lp_csrf_verify($token) {
-    return is_string($token)
-        && !empty($_SESSION['csrf_token'])
-        && hash_equals($_SESSION['csrf_token'], $token);
+    return \LabPress\Guard::verifyCsrf($token);
 }
 
 /**
  * 写操作守卫：带 token 则必须匹配；不带 token 则必须同源。
- * 校验失败直接输出 403 并终止请求。
+ * 兼容 v1.1.1 的 API 调用方式。
  */
 function lp_guard_write_request() {
-    if (!lp_is_write_request()) {
-        return true;
-    }
-    $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_POST['_csrf'] ?? null);
-    if ($token !== null) {
-        if (lp_csrf_verify($token)) {
-            return true;
-        }
-        http_response_code(403);
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(['success' => false, 'error' => 'Invalid CSRF token']);
-        exit;
-    }
-    if (!lp_request_is_same_origin()) {
-        http_response_code(403);
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(['success' => false, 'error' => 'Invalid request origin']);
-        exit;
-    }
-    return true;
+    return \LabPress\Guard::guardWriteRequest();
 }
 
 /**
@@ -333,8 +292,7 @@ function getToolVersions($toolName) {
  * 权限检查（用于后台）
  */
 function hasPermission($perm) {
-    $userPerms = $_SESSION['permissions'] ?? [];
-    return in_array('all', $userPerms) || in_array($perm, $userPerms);
+    return \LabPress\Guard::hasPermission((string)$perm);
 }
 
 function getNews() {
@@ -484,26 +442,30 @@ function getNavMenus($location = 'header') {
  * 获取已启用的插件 slug 列表
  */
 function getActivePlugins() {
+    if (\LabPress\Config::feature('plugins.manager_v2', true)) {
+        return \LabPress\Plugin\Manager::activeSlugs();
+    }
     global $pdo;
     $stmt = $pdo->query("SELECT slug FROM plugins WHERE status = 1");
     return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
 }
 
 /**
- * 扫描 plugins/ 目录，将新插件插入数据库（已存在的忽略）
+ * 扫描 plugins/ 目录，刷新元数据（不改变启用状态）
  */
 function syncPlugins() {
+    if (\LabPress\Config::feature('plugins.manager_v2', true)) {
+        return \LabPress\Plugin\Manager::discover();
+    }
     global $pdo;
     $pluginsDir = __DIR__ . '/../plugins/';
     if (!is_dir($pluginsDir)) return;
-
     $existingSlugs = $pdo->query("SELECT slug FROM plugins")->fetchAll(PDO::FETCH_COLUMN) ?: [];
     $dirs = scandir($pluginsDir);
     foreach ($dirs as $dir) {
         if ($dir === '.' || $dir === '..' || !is_dir($pluginsDir . $dir)) continue;
         $pluginFile = $pluginsDir . $dir . '/plugin.php';
         if (file_exists($pluginFile) && !in_array($dir, $existingSlugs)) {
-            // 解析插件头部信息
             $info = [
                 'slug' => $dir,
                 'name' => $dir,
@@ -516,7 +478,6 @@ function syncPlugins() {
             if (preg_match('/Description:\s*(.+)/i', $content, $m)) $info['description'] = trim($m[1]);
             if (preg_match('/Version:\s*(.+)/i', $content, $m)) $info['version'] = trim($m[1]);
             if (preg_match('/Author:\s*(.+)/i', $content, $m)) $info['author'] = trim($m[1]);
-
             $stmt = $pdo->prepare("INSERT INTO plugins (slug, name, description, version, author, status) VALUES (?,?,?,?,?,0)");
             $stmt->execute([$info['slug'], $info['name'], $info['description'], $info['version'], $info['author']]);
         }
@@ -527,6 +488,10 @@ function syncPlugins() {
  * 加载所有已启用的插件（执行 plugin.php）
  */
 function loadPlugins() {
+    if (\LabPress\Config::feature('plugins.manager_v2', true)) {
+        \LabPress\Plugin\Manager::boot();
+        return;
+    }
     $activeSlugs = getActivePlugins();
     $pluginsDir = __DIR__ . '/../plugins/';
     foreach ($activeSlugs as $slug) {

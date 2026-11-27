@@ -1,0 +1,8 @@
+# 禁止直接访问 storage/（配置含数据库密码，日志含运行信息）
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

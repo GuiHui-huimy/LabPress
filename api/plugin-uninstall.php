@@ -42,8 +42,9 @@ if ($plugin['status'] == 1) {
     exit;
 }
 
-// 先触发卸载钩子（在删除文件之前，这样插件还能执行清理逻辑）
-LabPress_Hooks::doAction('plugin_uninstalled', $slug);
+// 先加载插件文件，确保它自己的卸载钩子已注册，再触发卸载。
+\LabPress\Plugin\Manager::load($slug);
+\LabPress\Plugin\Manager::uninstall($slug);
 
 // 删除插件目录
 $pluginDir = __DIR__ . '/../plugins/' . $slug;

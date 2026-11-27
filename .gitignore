@@ -60,3 +60,9 @@ __pycache__/
 .vscode
 *.sublime-project
 *.sublime-workspace
+# -----------------------------------------------------------------------------
+# v1.2.0 部署配置与运行日志
+# -----------------------------------------------------------------------------
+/storage/config/site.php
+/storage/config/features.local.php
+/storage/logs/*.log

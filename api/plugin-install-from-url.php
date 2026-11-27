@@ -83,6 +83,8 @@ if (empty($result['success'])) {
     exit;
 }
 
+\LabPress\Plugin\Manager::discover();
+
 echo json_encode([
     'success' => true,
     'slug' => $result['slug'],
