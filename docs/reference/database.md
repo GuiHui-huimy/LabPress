@@ -27,7 +27,7 @@ The database contains the following tables:
 | `nav_menu` | Stores header and footer navigation menu items. |
 | `plugins` | Stores plugin registration metadata and activation status. |
 | `schema_version` | Stores applied migration versions. |
-| `footer_info` | Stores configuration for the FooterInfo plugin. |
+| `footer_info` | Legacy Footer Info 2.x storage; migrated into `plugins.settings_json` and retained for rollback. |
 | `ml_translations` | Stores dynamic translations used by the Dynamic Multi-Language plugin. |
 
 ```mermaid
@@ -355,7 +355,7 @@ Indexes:
 
 ### 3.14 `footer_info`
 
-Stores settings for the FooterInfo plugin.
+Legacy Footer Info 2.x table. Footer Info 3.0 migrates the row into `plugins.settings_json` and keeps this table for rollback and one migration window.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -375,21 +375,31 @@ Indexes:
 
 ### 3.15 `ml_translations`
 
-Stores dynamic translations used by the Dynamic Multi-Language plugin.
+Stores dynamic translations used by Dynamic Multi-Language 3.0 and the i18n repository.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | `int` | Primary key, auto-increment. |
-| `table_name` | `varchar(50)` | Logical source of the original string. |
-| `record_id` | `varchar(100)` | Original record ID or the original string itself. |
-| `field_name` | `varchar(100)` | Field within the record. |
+| `table_name` | `varchar(50)` | Legacy source table name; kept in sync during the migration window. |
+| `entity` | `varchar(50)` | v2 entity name (`nav_menu`, `slides`, `site_config`, `__custom`, …). |
+| `record_id` | `varchar(255)` | Legacy record ID, or the original text for `__custom`. |
+| `entity_id` | `varchar(255)` | v2 record ID; SHA-256 for `__custom` keys. |
+| `field_name` | `varchar(100)` | Legacy field name. |
+| `field` | `varchar(100)` | v2 field name. |
 | `locale` | `varchar(10)` | Target language code. |
 | `translated_value` | `text` | Translated text. |
+| `source_locale` | `varchar(10)` | Locale of the source text. |
+| `source_hash` | `char(64)` | SHA-256 of the source text, used for outdated detection. |
+| `status` | `varchar(20)` | `current` or `outdated`. |
 
 Indexes:
 
 - Primary key on `id`.
-- Unique key on (`table_name`, `record_id`, `field_name`, `locale`).
+- Legacy unique key on (`table_name`, `record_id`, `field_name`, `locale`).
+- v2 unique key on (`entity`, `entity_id`, `field`, `locale`).
+- Key on (`entity`, `locale`) for request-scoped prefetch.
+
+The v2 migration backfills `entity`/`entity_id`/`field` from legacy columns and hashes `__custom` record IDs. Legacy columns remain for one migration window; new code writes both shapes.
 
 ---
 

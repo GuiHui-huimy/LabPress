@@ -29,6 +29,10 @@ final class SiteConfig
         'stat_workflows',
         // dynamic-multilang 官方插件
         'ml_source_locale',
+        'i18n_version',
+        // 插件远程安装（默认关闭）
+        'plugin_remote_install_enabled',
+        'plugin_remote_install_hosts',
     ];
 
     /** @return array<int,string> */

@@ -1,258 +1,261 @@
 <?php
-// admin-page.php - 后台管理页面回调
-if (!hasPermission('all')) {
-    echo '<div class="card"><p>' . __('no_permission', 'admin') . '</p></div>';
-    return;
-}
+// Dynamic Multi-Language 3.0 translation workbench.
+// Permission and CSRF are handled by the admin Registry / Guard.
 
-$db = LabPress::db();
+use LabPress\I18n\EntityRegistry;
+use LabPress\I18n\Repository;
+use LabPress\Guard;
+
 $languages = getAvailableLanguages();
-// 后台统一不使用国旗 emoji，语言名直接展示
-foreach ($languages as &$langRow) {
-    $langRow['flag'] = '';
-}
-unset($langRow);
 $sourceLocale = ml_get_source_locale();
+$errors = [];
+$notice = '';
+
+$entityLabels = [
+    'nav_menu' => __('ml_tab_nav_menus', 'plugin:dynamic-multilang'),
+    'slides' => __('ml_tab_slides', 'plugin:dynamic-multilang'),
+    'site_config' => __('ml_tab_about', 'plugin:dynamic-multilang'),
+    '__custom' => __('ml_tab_dynamic_content', 'plugin:dynamic-multilang'),
+];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['ml_source_locale'])) {
-        ml_set_source_locale($_POST['ml_source_locale']);
-        $sourceLocale = $_POST['ml_source_locale'];
-    }
-    $translations = $_POST['translations'] ?? [];
-    foreach ($translations as $table => $items) {
-        foreach ($items as $recordId => $fields) {
-            foreach ($fields as $field => $locales) {
-                foreach ($locales as $locale => $value) {
-                    ml_set_translation($table, $recordId, $field, $locale, $value);
+    if (!Guard::verifyCsrf($_POST['_csrf'] ?? '')) {
+        $errors[] = __('ml_csrf_error', 'plugin:dynamic-multilang');
+    } else {
+        $postedSource = (string)($_POST['ml_source_locale'] ?? '');
+        if ($postedSource !== '' && in_array($postedSource, array_column($languages, 'locale'), true)) {
+            if ($postedSource !== $sourceLocale) {
+                ml_set_source_locale($postedSource);
+                $sourceLocale = $postedSource;
+                $notice = __('ml_source_locale_saved', 'plugin:dynamic-multilang');
+            }
+        }
+
+        $translations = $_POST['t'] ?? [];
+        if (is_array($translations)) {
+            foreach ($translations as $entity => $items) {
+                if (EntityRegistry::get((string)$entity) === null || !is_array($items)) {
+                    continue;
                 }
+                foreach ($items as $formId => $fields) {
+                    if (!is_array($fields)) {
+                        continue;
+                    }
+                    foreach ($fields as $field => $locales) {
+                        if (!is_array($locales)) {
+                            continue;
+                        }
+                        $definition = EntityRegistry::get((string)$entity);
+                        if (!isset($definition['fields'][(string)$field])) {
+                            continue;
+                        }
+                        $source = (string)($_POST['src'][$entity][$formId][$field] ?? '');
+                        $repoId = $entity === '__custom' ? $source : (string)$formId;
+                        foreach ($locales as $locale => $value) {
+                            if (!in_array((string)$locale, array_column($languages, 'locale'), true)) {
+                                continue;
+                            }
+                            Repository::set((string)$entity, $repoId, (string)$field, (string)$locale, (string)$value, $source);
+                        }
+                    }
+                }
+            }
+            Repository::invalidate();
+            if ($notice === '') {
+                $notice = __('ml_saved', 'plugin:dynamic-multilang');
             }
         }
     }
-    echo '<div class="alert alert-success">' . __('success', 'admin') . '</div>';
 }
 
-$targetLocales = array_filter($languages, function($l) use ($sourceLocale) { return $l['locale'] !== $sourceLocale; });
-
-$navMenus = $db->query("SELECT * FROM nav_menu ORDER BY location, sort_order")->fetchAll();
-$slides = $db->query("SELECT * FROM slides ORDER BY sort_order")->fetchAll();
-
-$configFields = ['about_us', 'research_title', 'research_subtitle', 'stat_items', 'research_cards'];
-$siteConfig = [];
-foreach ($configFields as $field) {
-    $stmt = $db->prepare("SELECT config_value FROM site_config WHERE config_key=?");
-    $stmt->execute([$field]);
-    $siteConfig[$field] = $stmt->fetchColumn();
+if ($errors !== []) {
+    echo '<div class="alert alert-danger"><ul class="mb-0">';
+    foreach ($errors as $error) {
+        echo '<li>' . e($error) . '</li>';
+    }
+    echo '</ul></div>';
+}
+if ($notice !== '') {
+    echo '<div class="alert alert-success">' . e($notice) . '</div>';
 }
 
-$statItems = json_decode($siteConfig['stat_items'] ?? '[]', true) ?: [];
-$researchCards = json_decode($siteConfig['research_cards'] ?? '[]', true) ?: [];
+$targetLocales = [];
+foreach ($languages as $language) {
+    if (($language['locale'] ?? '') !== $sourceLocale) {
+        $targetLocales[] = $language;
+    }
+}
 
-$dynamicItems = [];
+$navRows = EntityRegistry::rows('nav_menu');
+$slideRows = EntityRegistry::rows('slides');
+$siteRows = EntityRegistry::rows('site_config');
+$siteValues = [];
+foreach ($siteRows as $row) {
+    $siteValues[(string)$row['config_key']] = (string)$row['config_value'];
+}
+$siteFields = [
+    'about_us' => __('ml_about_us', 'plugin:dynamic-multilang'),
+    'research_title' => __('ml_research_title', 'plugin:dynamic-multilang'),
+    'research_subtitle' => __('ml_research_subtitle', 'plugin:dynamic-multilang'),
+];
+
+$customItems = [];
+$statItems = json_decode((string)($siteValues['stat_items'] ?? '[]'), true) ?: [];
+$researchCards = json_decode((string)($siteValues['research_cards'] ?? '[]'), true) ?: [];
 foreach ($statItems as $item) {
-    if (!empty($item['label'])) {
-        $dynamicItems[] = ['type' => 'stat_label', 'text' => $item['label']];
+    $text = (string)($item['label'] ?? '');
+    if ($text !== '') {
+        $customItems[hash('sha256', $text)] = $text;
     }
 }
 foreach ($researchCards as $card) {
-    if (!empty($card['title'])) {
-        $dynamicItems[] = ['type' => 'card_title', 'text' => $card['title']];
+    foreach (['title', 'desc'] as $key) {
+        $text = (string)($card[$key] ?? '');
+        if ($text !== '') {
+            $customItems[hash('sha256', $text)] = $text;
+        }
     }
-    if (!empty($card['desc'])) {
-        $dynamicItems[] = ['type' => 'card_desc', 'text' => $card['desc']];
+}
+
+// Batch prefetch: one query per entity/locale, never one per row.
+foreach ($targetLocales as $language) {
+    $locale = (string)$language['locale'];
+    Repository::prefetch('nav_menu', null, ['title'], $locale);
+    Repository::prefetch('slides', null, ['title', 'description'], $locale);
+    Repository::prefetch('site_config', null, ['config_value'], $locale);
+    Repository::prefetch('__custom', null, ['text'], $locale);
+}
+
+$counts = [];
+foreach ($targetLocales as $language) {
+    $locale = (string)$language['locale'];
+    $counts[$locale] = [
+        'nav_menu' => Repository::translatedCount('nav_menu', $locale),
+        'slides' => Repository::translatedCount('slides', $locale),
+        'site_config' => Repository::translatedCount('site_config', $locale),
+        '__custom' => Repository::translatedCount('__custom', $locale),
+    ];
+}
+
+$renderField = static function (string $entity, string $formId, string $field, string $source, string $type = 'text') use ($targetLocales): void {
+    $input = $type === 'textarea' ? 'textarea' : 'input';
+    echo '<input type="hidden" name="src[' . e($entity) . '][' . e($formId) . '][' . e($field) . ']" value="' . e($source) . '">';
+    foreach ($targetLocales as $language) {
+        $locale = (string)$language['locale'];
+        $value = $entity === '__custom'
+            ? (Repository::get('__custom', $source, $field, $locale) ?? '')
+            : (Repository::get($entity, $formId, $field, $locale) ?? '');
+        echo '<div class="form-group">';
+        echo '<label>' . e((string)$language['name']) . ' · ' . e(__('ml_translation', 'plugin:dynamic-multilang')) . '</label>';
+        $name = 't[' . $entity . '][' . $formId . '][' . $field . '][' . $locale . ']';
+        if ($input === 'textarea') {
+            echo '<textarea class="form-control" rows="3" name="' . e($name) . '">' . e((string)$value) . '</textarea>';
+        } else {
+            echo '<input type="text" class="form-control" name="' . e($name) . '" value="' . e((string)$value) . '">';
+        }
+        echo '</div>';
     }
-}
-
-// 批量获取所有已存在的自定义翻译（用于填充动态内容输入框）
-$existingCustomTrans = [];
-$customRes = $db->query("SELECT record_id, locale, translated_value FROM ml_translations WHERE table_name='__custom'");
-while ($row = $customRes->fetch()) {
-    $existingCustomTrans[$row['record_id']][$row['locale']] = $row['translated_value'];
-}
-
-$pluginLangFile = __DIR__ . '/languages/zh_CN.php';
-$pluginKeys = file_exists($pluginLangFile) ? include $pluginLangFile : [];
-
-$totalTrans = $db->query("SELECT COUNT(*) FROM ml_translations")->fetchColumn();
-if ($totalTrans == 0) {
-    echo '<div class="alert alert-warning">' . __('ml_no_translations_yet', 'plugin:dynamic-multilang') . '</div>';
-}
+};
 ?>
 <div class="card">
-    <div class="card-header"><h3><?= __('ml_plugin_name','plugin:dynamic-multilang') ?></h3></div>
+    <div class="card-header">
+        <h3><?= e(__('ml_plugin_name', 'plugin:dynamic-multilang')) ?></h3>
+    </div>
     <div class="card-body">
         <form method="post" id="ml-form">
+            <input type="hidden" name="_csrf" value="<?= e(Guard::csrfToken()) ?>">
             <div class="form-group row">
-                <label class="col-sm-3 col-form-label"><?= __('ml_select_source_locale','plugin:dynamic-multilang') ?></label>
+                <label class="col-sm-3 col-form-label"><?= e(__('ml_select_source_locale', 'plugin:dynamic-multilang')) ?></label>
                 <div class="col-sm-4">
                     <select name="ml_source_locale" class="form-control" onchange="this.form.submit()">
-                        <?php foreach ($languages as $lang): ?>
-                            <option value="<?= htmlspecialchars($lang['locale']) ?>" <?= $lang['locale'] === $sourceLocale ? 'selected' : '' ?>>
-                                <?= $lang['flag'] . ' ' . $lang['name'] ?>
+                        <?php foreach ($languages as $language): ?>
+                            <option value="<?= e((string)$language['locale']) ?>" <?= (string)$language['locale'] === $sourceLocale ? 'selected' : '' ?>>
+                                <?= e((string)$language['name']) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <small class="col-sm-5 form-text text-muted"><?= __('ml_select_source_locale_help','plugin:dynamic-multilang') ?></small>
+                <small class="col-sm-5 form-text text-muted"><?= e(__('ml_select_source_locale_help', 'plugin:dynamic-multilang')) ?></small>
             </div>
             <hr>
-            <ul class="nav nav-tabs" id="mlTabs" role="tablist">
-                <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#nav-menus"><?= __('ml_tab_nav_menus','plugin:dynamic-multilang') ?></a></li>
-                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#slides"><?= __('ml_tab_slides','plugin:dynamic-multilang') ?></a></li>
-                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#about-us"><?= __('ml_tab_about','plugin:dynamic-multilang') ?></a></li>
-                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#dynamic-content"><?= __('ml_tab_dynamic_content','plugin:dynamic-multilang') ?></a></li>
-                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#plugin-lang"><?= __('ml_tab_plugin_lang','plugin:dynamic-multilang') ?></a></li>
-            </ul>
-            <div class="tab-content mt-3">
-                <!-- 导航菜单 -->
-                <div class="tab-pane active" id="nav-menus">
-                    <?php foreach ($navMenus as $menu): ?>
-                    <div class="card mb-2">
-                        <div class="card-header"><?= htmlspecialchars($menu['location']) ?> - <?= htmlspecialchars($menu['title']) ?></div>
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label><?= str_replace('{locale}', $sourceLocale, __('ml_original_content','plugin:dynamic-multilang')) ?></label>
-                                <input type="text" class="form-control" value="<?= htmlspecialchars($menu['title']) ?>" readonly>
-                            </div>
-                            <?php foreach ($targetLocales as $lang): ?>
-                            <div class="form-group">
-                                <label><?= $lang['flag'] . ' ' . $lang['name'] ?> <?= __('ml_translation','plugin:dynamic-multilang') ?></label>
-                                <input type="text" class="form-control"
-                                       name="translations[nav_menu][<?= $menu['id'] ?>][title][<?= $lang['locale'] ?>]"
-                                       value="<?= htmlspecialchars(ml_get_translation('nav_menu', $menu['id'], 'title', $lang['locale']) ?: '') ?>">
-                            </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
 
-                <!-- 轮播图 -->
-                <div class="tab-pane" id="slides">
-                    <?php foreach ($slides as $slide): ?>
-                    <div class="card mb-2">
-                        <div class="card-header"><?= __('ml_slide_title','plugin:dynamic-multilang') ?> - <?= htmlspecialchars($slide['title']) ?></div>
-                        <div class="card-body">
-                            <h6><?= __('ml_slide_title','plugin:dynamic-multilang') ?></h6>
-                            <div class="form-group">
-                                <label><?= str_replace('{locale}', $sourceLocale, __('ml_original_content','plugin:dynamic-multilang')) ?></label>
-                                <input type="text" class="form-control" value="<?= htmlspecialchars($slide['title']) ?>" readonly>
-                            </div>
-                            <?php foreach ($targetLocales as $lang): ?>
-                            <div class="form-group">
-                                <label><?= $lang['flag'] . ' ' . $lang['name'] ?> <?= __('ml_translation','plugin:dynamic-multilang') ?></label>
-                                <input type="text" class="form-control"
-                                       name="translations[slides][<?= $slide['id'] ?>][title][<?= $lang['locale'] ?>]"
-                                       value="<?= htmlspecialchars(ml_get_translation('slides', $slide['id'], 'title', $lang['locale']) ?: '') ?>">
-                            </div>
+            <?php
+            $sections = [
+                'nav_menu' => [
+                    'rows' => $navRows,
+                    'total' => count($navRows),
+                    'fields' => ['title' => '标题'],
+                    'value' => static fn(array $row, string $field): string => (string)($row[$field] ?? ''),
+                    'label' => static fn(array $row): string => '#' . (string)($row['id'] ?? ''),
+                    'type' => ['title' => 'text'],
+                ],
+                'slides' => [
+                    'rows' => $slideRows,
+                    'total' => count($slideRows) * 2,
+                    'fields' => ['title' => '标题', 'description' => '描述'],
+                    'value' => static fn(array $row, string $field): string => (string)($row[$field] ?? ''),
+                    'label' => static fn(array $row): string => '#' . (string)($row['id'] ?? ''),
+                    'type' => ['title' => 'text', 'description' => 'textarea'],
+                ],
+                'site_config' => [
+                    'rows' => array_map(static fn(string $field, string $label): array => ['config_key' => $field, 'label' => $label, 'config_value' => $siteValues[$field] ?? ''], array_keys($siteFields), array_values($siteFields)),
+                    'total' => count($siteFields),
+                    'fields' => ['config_value' => '文本'],
+                    'value' => static fn(array $row, string $field): string => (string)($row[$field] ?? ''),
+                    'label' => static fn(array $row): string => (string)($row['label'] ?? $row['config_key']),
+                    'type' => ['config_value' => 'textarea'],
+                ],
+                '__custom' => [
+                    'rows' => array_map(static fn(string $hash, string $text): array => ['id' => $hash, 'text' => $text], array_keys($customItems), array_values($customItems)),
+                    'total' => count($customItems),
+                    'fields' => ['text' => '文本'],
+                    'value' => static fn(array $row, string $field): string => (string)($row[$field] ?? ''),
+                    'label' => static fn(array $row): string => __('ml_dynamic_content', 'plugin:dynamic-multilang') . ': ' . (function_exists('mb_substr') ? mb_substr((string)($row['text'] ?? ''), 0, 40) : substr((string)($row['text'] ?? ''), 0, 40)),
+                    'type' => ['text' => 'text'],
+                ],
+            ];
+            foreach ($sections as $entity => $section):
+                $total = (int)$section['total'];
+            ?>
+                <details class="ml-section" open>
+                    <summary>
+                        <strong><?= e($entityLabels[$entity] ?? $entity) ?></strong>
+                        <span class="text-muted">
+                            <?php foreach ($targetLocales as $language): ?>
+                                <?php $done = (int)($counts[(string)$language['locale']][$entity] ?? 0); ?>
+                                · <?= e((string)$language['name']) ?> <?= $done ?>/<?= $total ?>
                             <?php endforeach; ?>
-                            <h6><?= __('ml_slide_description','plugin:dynamic-multilang') ?></h6>
-                            <div class="form-group">
-                                <label><?= str_replace('{locale}', $sourceLocale, __('ml_original_content','plugin:dynamic-multilang')) ?></label>
-                                <textarea class="form-control" readonly><?= htmlspecialchars($slide['description']) ?></textarea>
-                            </div>
-                            <?php foreach ($targetLocales as $lang): ?>
-                            <div class="form-group">
-                                <label><?= $lang['flag'] . ' ' . $lang['name'] ?> <?= __('ml_translation','plugin:dynamic-multilang') ?></label>
-                                <textarea class="form-control"
-                                          name="translations[slides][<?= $slide['id'] ?>][description][<?= $lang['locale'] ?>]"><?= htmlspecialchars(ml_get_translation('slides', $slide['id'], 'description', $lang['locale']) ?: '') ?></textarea>
-                            </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-
-                <!-- 关于我们 / 研究方向 -->
-                <div class="tab-pane" id="about-us">
-                    <?php 
-                    $labels = ['about_us' => __('ml_about_us','plugin:dynamic-multilang'), 'research_title' => __('ml_research_title','plugin:dynamic-multilang'), 'research_subtitle' => __('ml_research_subtitle','plugin:dynamic-multilang')];
-                    foreach (['about_us', 'research_title', 'research_subtitle'] as $field): ?>
-                    <div class="card mb-2">
-                        <div class="card-header"><?= $labels[$field] ?></div>
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label><?= str_replace('{locale}', $sourceLocale, __('ml_original_content','plugin:dynamic-multilang')) ?></label>
-                                <textarea class="form-control" readonly rows="3"><?= htmlspecialchars($siteConfig[$field]) ?></textarea>
-                            </div>
-                            <?php foreach ($targetLocales as $lang): ?>
-                            <div class="form-group">
-                                <label><?= $lang['flag'] . ' ' . $lang['name'] ?> <?= __('ml_translation','plugin:dynamic-multilang') ?></label>
-                                <textarea class="form-control"
-                                          name="translations[site_config][<?= $field ?>][config_value][<?= $lang['locale'] ?>]"><?= htmlspecialchars(ml_get_translation('site_config', $field, 'config_value', $lang['locale']) ?: '') ?></textarea>
-                            </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-
-                <!-- 动态内容翻译 -->
-                <div class="tab-pane" id="dynamic-content">
-                    <p class="text-muted"><?= __('ml_dynamic_content_desc','plugin:dynamic-multilang') ?></p>
-                    <?php if (empty($dynamicItems)): ?>
-                        <p><?= __('ml_no_dynamic_content','plugin:dynamic-multilang') ?></p>
+                        </span>
+                    </summary>
+                    <?php if (empty($section['rows'])): ?>
+                        <p class="text-muted"><?= e(__('ml_no_items', 'plugin:dynamic-multilang')) ?></p>
                     <?php else: ?>
-                        <?php foreach ($dynamicItems as $item): ?>
-                        <?php $origText = $item['text']; ?>
-                        <div class="card mb-2">
-                            <div class="card-header">
-                                <?= $item['type'] === 'stat_label' ? __('ml_stat_label','plugin:dynamic-multilang') : __('ml_card_text','plugin:dynamic-multilang') ?>
-                            </div>
-                            <div class="card-body">
-                                <div class="form-group">
-                                    <label><?= str_replace('{locale}', $sourceLocale, __('ml_original_content','plugin:dynamic-multilang')) ?></label>
-                                    <input type="text" class="form-control" value="<?= htmlspecialchars($origText) ?>" readonly>
+                        <?php foreach ($section['rows'] as $row): ?>
+                            <?php $formId = (string)($row['config_key'] ?? $row['id'] ?? ''); ?>
+                            <div class="card mb-3">
+                                <div class="card-header"><?= e((string)($section['label'])($row)) ?></div>
+                                <div class="card-body">
+                                    <?php foreach ($section['fields'] as $field => $fieldLabel): ?>
+                                        <h6><?= e((string)$fieldLabel) ?></h6>
+                                        <div class="form-group">
+                                            <label><?= e(str_replace('{locale}', $sourceLocale, __('ml_original_content', 'plugin:dynamic-multilang'))) ?></label>
+                                            <?php $source = (string)($section['value'])($row, $field); ?>
+                                            <?php if (($section['type'][$field] ?? 'text') === 'textarea'): ?>
+                                                <textarea class="form-control" readonly rows="3"><?= e($source) ?></textarea>
+                                            <?php else: ?>
+                                                <input type="text" class="form-control" readonly value="<?= e($source) ?>">
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php $renderField($entity, $formId, $field, $source, $section['type'][$field] ?? 'text'); ?>
+                                    <?php endforeach; ?>
                                 </div>
-                                <?php foreach ($targetLocales as $lang): 
-                                    $savedVal = $existingCustomTrans[$origText][$lang['locale']] ?? '';
-                                ?>
-                                <div class="form-group">
-                                    <label><?= $lang['flag'] . ' ' . $lang['name'] ?> <?= __('ml_translation','plugin:dynamic-multilang') ?></label>
-                                    <input type="text" class="form-control"
-                                           name="translations[__custom][<?= htmlspecialchars($origText) ?>][text][<?= $lang['locale'] ?>]"
-                                           value="<?= htmlspecialchars($savedVal) ?>">
-                                </div>
-                                <?php endforeach; ?>
                             </div>
-                        </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
-                </div>
+                </details>
+            <?php endforeach; ?>
 
-                <!-- 插件自身语言 -->
-                <div class="tab-pane" id="plugin-lang">
-                    <p class="text-muted"><?= __('ml_plugin_lang_help','plugin:dynamic-multilang') ?></p>
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th><?= __('ml_key','plugin:dynamic-multilang') ?></th>
-                                <th><?= __('ml_default_value','plugin:dynamic-multilang') ?> (<?= $sourceLocale ?>)</th>
-                                <?php foreach ($targetLocales as $lang): ?>
-                                    <th><?= $lang['flag'] . ' ' . $lang['name'] ?></th>
-                                <?php endforeach; ?>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($pluginKeys as $key => $defaultText): ?>
-                            <tr>
-                                <td><code><?= htmlspecialchars($key) ?></code></td>
-                                <td><?= htmlspecialchars($defaultText) ?></td>
-                                <?php foreach ($targetLocales as $lang): ?>
-                                    <td>
-                                        <input type="text" class="form-control"
-                                               name="translations[plugin_dynamic-multilang][<?= $key ?>][plugin_text][<?= $lang['locale'] ?>]"
-                                               value="<?= htmlspecialchars(ml_get_translation('plugin_dynamic-multilang', $key, 'plugin_text', $lang['locale']) ?: '') ?>"
-                                               style="min-width:200px;">
-                                    </td>
-                                <?php endforeach; ?>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <button type="submit" class="btn btn-primary mt-3"><?= __('ml_save_all','plugin:dynamic-multilang') ?></button>
+            <button type="submit" class="btn btn-primary mt-3"><?= e(__('ml_save_all', 'plugin:dynamic-multilang')) ?></button>
         </form>
     </div>
 </div>

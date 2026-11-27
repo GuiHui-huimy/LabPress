@@ -4,30 +4,41 @@ All notable changes to LabPress are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Versions are ordered from newest to oldest.
 
-## [1.3.0-dev] - 2026-11-27
+## [1.3.0] - 2026-11-27
 
-v1.3.0 is the plugin-contract and i18n release. The first development stage establishes the plugin contract foundation; the i18n engine, translation workbench, and official plugin 3.0 rewrites are still in progress.
+LabPress 1.3.0 is the plugin-contract and i18n release. It establishes a stable manifest/install/settings/dependency contract for plugins, introduces an entity-based translation store and translation workbench, and rewrites both official plugins for the new APIs.
 
 ### Added
 
-- Manifest v2 reader (`core/Plugin/Manifest.php`) with `plugin.json` validation, legacy header fallback, dependency declarations, `provides` / `conflicts`, and settings schemas. Includes `docs/plugins-dev/plugin.schema.json`.
-- Safe `PackageInstaller` with entry inspection before extraction, staging under `storage/tmp`, atomic swap, backup/rollback, and `storage/logs/plugin-install.log`.
-- Dependency checks before activation: `requires.core`, `requires.php`, `requires.plugins`, `provides`, and `conflicts`.
-- Plugin Settings API: manifest schema or `Settings::register()` → auto-rendered CSRF-protected form; values stored in `plugins.settings_json`; `Settings::get()` / `Settings::all()`.
-- `plugins.manifest_json` cache column via migration `20261127_0001_plugin_manifest`.
-- `docs/plugins-dev/plugin-manifest.md`.
+- Manifest v2 reader (`core/Plugin/Manifest.php`) with `plugin.json` validation, legacy header fallback, dependency declarations, `provides` / `conflicts`, settings schemas, and `docs/plugins-dev/plugin.schema.json`.
+- Safe `PackageInstaller`: entry inspection before extraction, path traversal/absolute path/symlink checks, entry and size limits, staging under `storage/tmp`, single-root validation, atomic swap, backup/rollback, and `storage/logs/plugin-install.log`.
+- Dependency checks before activation: `requires.core`, `requires.php`, `requires.plugins`, `provides`, and `conflicts`; supports exact, range, caret, tilde, wildcard, and `||` constraints.
+- Plugin Settings API: manifest schema or `Settings::register()` renders a CSRF-protected form, validates required/max-length/number/select/url/email fields, and stores values in `plugins.settings_json`. Added `Settings::get()`, `Settings::all()`, and `Settings::saved()`.
+- Remotely hosted plugin installation (`api/plugin-install-from-url.php`) is now default-disabled and requires an explicit host allowlist and SHA-256. Downloads use cURL with per-hop HTTPS validation, public-IP checks, manual redirect validation, and a hard 20MB byte cap.
+- i18n engine (`core/I18n/Translator.php`): locale/module isolation, exact → language-family → declared fallback → site-default fallback, dot-key lookup, `locale.json` metadata, legacy `lang.config` support, and `plugin:{slug}` catalogs.
+- Translation model v2 (`ml_translations.entity/entity_id/field`) with legacy column dual-write, `__custom` SHA-256 IDs, source hashes, status, request-scoped prefetch/dictionary, `i18n_version`, and migration `20261127_0002_i18n_v2`.
+- Translation entity registry (`core/I18n/EntityRegistry.php`): plugins declare tables/fields instead of hard-coding workbench tabs.
+- Translation workbench (Dynamic Multi-Language 3.0): entity-driven tabs, batch prefetch, per-locale completion counts, CSRF-protected saves, source-locale selection, and dynamic `nav_menu` / `slides` / `site_config` / custom-content translation.
+- `languages/ja_JP/locale.json` plus Japanese fallback metadata; plugin language paths now prefer `plugins/{slug}/languages/{locale}/{domain}.php` with legacy fallback.
+- Footer Info 3.0: slug `footer-info` (legacy `FooterInfo` alias migration), Settings API form, old `footer_info` data migration into `plugins.settings_json`, and zero-loss legacy data retention.
+- `tools/i18n-check.php` for CI literal-key coverage across `zh_CN` / `en_US` / `ja_JP`.
+- Migrations `20261127_0002_i18n_v2`, `20261127_0003_footer_info_slug`, and `20261127_0004_official_plugin_versions`; `install/Schema.php` includes the v2 translation columns.
 
 ### Changed
 
-- `lp_install_plugin_zip()` now delegates to `PackageInstaller` instead of calling `ZipArchive::extractTo()` directly.
-- `Manager::discover()` normalizes and caches manifest metadata; `Manager::activate()` rejects missing/conflicting dependencies.
-- `LABPRESS_VERSION` is `1.3.0-dev` during this development stage.
-- Plugin language lookup prefers `plugins/{slug}/languages/{locale}/plugin.php`, then falls back to the legacy `plugins/{slug}/languages/{locale}.php`.
+- `lp_install_plugin_zip()` delegates to `PackageInstaller`; the upload API returns `legacy` and `mode` metadata while keeping the old response structure.
+- `Manager::discover()` caches manifest metadata; `Manager::activate()` rejects missing/conflicting dependencies before loading a plugin.
+- `__()` / `getAvailableLanguages()` now use `Translator`; language lookup is locale/module isolated.
+- `getLocale()` no longer caches an early admin locale resolved before `IS_ADMIN` is defined, so `admin_locale` switches work after plugin load.
+- `LABPRESS_VERSION` is `1.3.0`.
+- Official plugins are now `3.0.0`: Footer Info moves to the Settings API and Dynamic Multi-Language moves to the v2 repository/registry.
+- Plugin admin pages are registered through `Admin\Registry`; neither official plugin performs its own permission check.
 
 ### Notes
 
-- Remote install hardening, Registry-only plugin admin pages, i18n v2, translation workbench, and official plugin 3.0 are not complete in this stage.
-- MarketplaceCore remains a read-only reference; no MarketplaceCore file was modified.
+- `MarketplaceCore` remains a read-only reference; no MarketplaceCore file was modified.
+- Remote install remains opt-in. Configure `plugin_remote_install_enabled=1` and `plugin_remote_install_hosts` before calling the endpoint; SHA-256 is mandatory.
+- Existing sites should run `php bin/migrate.php up` before opening the admin panel. The `footer_info` legacy table and `ml_translations` legacy columns are retained for one migration window.
 
 ## [1.2.0] - 2026-11-27
 

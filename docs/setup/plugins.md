@@ -46,25 +46,26 @@ The table structure is as follows:
 | `installed_at` | `timestamp` | Time when the plugin was registered |
 | `updated_at` | `timestamp` | Time when the plugin record was last updated |
 
-The `slug` field is the critical identifier. It must exactly match the name of the plugin directory inside `plugins/`. For example, a plugin in the directory `plugins/FooterInfo/` must have the slug `FooterInfo`.
+The `slug` field is the critical identifier. It must exactly match the name of the plugin directory inside `plugins/`. New manifests use lowercase, hyphenated slugs, for example `plugins/footer-info/plugin.json` with `"slug": "footer-info"`. Legacy directories such as `FooterInfo` remain readable until migrated.
 
-## 3. Plugin Header Format
+## 3. Plugin Manifest and Header Format
 
-Each plugin must include a header comment in its `plugin.php` file. The admin panel uses this header to populate the plugin metadata when scanning for new plugins.
+v1.3.0 prefers `plugin.json` (Manifest v2). See [plugin-manifest.md](../plugins-dev/plugin-manifest.md) for the full schema. `plugin.php` must still exist and remain the executable entry point.
 
-A minimal header looks like this:
+A minimal legacy header is kept for compatibility:
 
 ```php
 <?php
 /**
- * Plugin Name: FooterInfo
+ * Plugin Name: Footer Info
  * Description: Customizable footer information with placeholder support.
- * Version: 2.1.0
+ * Version: 3.0.0
  * Author: LabPress Community
+ * Requires LabPress: >=1.3.0
  */
 ```
 
-The parser reads the first lines of `plugin.php` and extracts the `Plugin Name`, `Description`, `Version`, and `Author` fields using regular expressions. These values are inserted into the `plugins` table during plugin scanning or installation.
+`plugin.json` values take precedence over the header. `Manager::discover()` caches the normalized manifest in `plugins.manifest_json`.
 
 ## 4. Access and Permissions
 
@@ -245,7 +246,15 @@ The **Plugins > Plugin Market** page is a placeholder for a future official plug
 
 The marketplace page uses the JavaScript file `admin/assets/js/plugins-market.js`. It attempts to fetch a list of plugins from a remote URL. If the marketplace API is unavailable, the page shows a message indicating that the market cannot be accessed.
 
-The remote installation endpoint `api/plugin-install-from-url.php` is already implemented and can install a plugin from a ZIP file hosted at a remote URL. This infrastructure is ready for integration when an official plugin repository becomes available.
+The remote installation endpoint `api/plugin-install-from-url.php` is available but disabled by default. Enable it explicitly and restrict the hosts that may serve packages:
+
+```php
+LabPress::setConfig('plugin_remote_install_enabled', '1');
+LabPress::setConfig('plugin_remote_install_hosts', 'plugins.example.com,*.cdn.example.com');
+```
+
+The request must include both `download_url` (HTTPS, port 443) and a 64-character `sha256`. The endpoint validates every redirect hop, rejects private/reserved IPs and hosts outside the allowlist, and aborts downloads above 20MB. MarketplaceCore remains a read-only reference for package inspection; LabPress does not modify its logic.
+
 
 ## 11. Plugin Lifecycle Hooks
 
@@ -264,7 +273,7 @@ The plugin system uses the `LabPress_Hooks` class to trigger events during the p
 
 Plugin developers can use these hooks to perform custom setup and cleanup tasks. For example, a plugin can create a database table when activated and drop it when uninstalled.
 
-### 11.1 Plugin language files in 1.1.1
+### 11.1 Plugin language files
 
 A plugin's own interface strings must be loaded explicitly:
 
@@ -272,7 +281,7 @@ A plugin's own interface strings must be loaded explicitly:
 __('ml_plugin_name', 'plugin:dynamic-multilang');
 ```
 
-The language file lives at `plugins/{slug}/languages/{locale}.php`. The core no longer merges every active plugin language file into the core namespace, so moving plugin strings into `languages/` is not a supported shortcut. When a plugin is deactivated, its language callback disappears; core strings remain intact.
+The preferred language file lives at `plugins/{slug}/languages/{locale}/plugin.php`; legacy `plugins/{slug}/languages/{locale}.php` files still load through the Translator fallback. The core no longer merges every active plugin language file into the core namespace, so moving plugin strings into `languages/` is not a supported shortcut. When a plugin is deactivated, its language callback disappears; core strings remain intact.
 
 This boundary is separate from database-content translation. Dynamic Multi-Language still uses `ml_translations` for navigation titles, slide text, and site settings.
 
@@ -292,6 +301,8 @@ When uninstalling a plugin, its directory is permanently deleted. Ensure that an
 
 - [ ] The plugin directory name matches the `slug` in the `plugins` table.
 - [ ] `plugin.php` has a complete header: name, description, version, author.
+- [ ] `plugin.json` exists and passes `php tools/lint-plugin.php --strict-version-sync --strict-php-header` when the plugin is distributed.
+- [ ] `version`, `requires.core`, and the PHP header agree with `true_version` and the current kernel version.
 - [ ] Activation succeeds and the plugin appears as **Active** after reload.
 - [ ] Deactivation does not remove data unless the plugin explicitly intends to.
 - [ ] The plugin uses `plugin:{slug}` for its own language strings.

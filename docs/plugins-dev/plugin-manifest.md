@@ -69,6 +69,8 @@ The required fields are `slug`, `name`, `version`, `description`, `author`, and 
 
 Supported field types: `text`, `textarea`, `select`, `checkbox`, `number`, `color`, `url`, `email`. Saving validates required fields, max length, numeric values, select membership, URL/email shape, and CSRF.
 
+When the schema is passed to `Settings::register()`, a field may add `label_module` (for example `plugin:footer-info`) so the label and option labels are translated at render time. The optional `options_module` overrides the module for select options. `plugin.json` labels remain the default, untranslated labels.
+
 ## Install pipeline
 
 `PackageInstaller` checks ZIP entries before extraction: path traversal, absolute paths, symlinks, entry count (2000), unpacked size (50MB), compression ratio (100), dangerous extensions, one package root, `plugin.json` validity, and `plugin.php`. It extracts into `storage/tmp/plugin-*`, validates the manifest, then swaps `plugins/{slug}` atomically. Existing directories are backed up to `plugins/{slug}.backup-*` and restored if the swap fails. Every attempt appends a JSON line to `storage/logs/plugin-install.log`.

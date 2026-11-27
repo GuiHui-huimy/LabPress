@@ -535,18 +535,21 @@ Request body:
 
 ```json
 {
-  "download_url": "https://example.com/plugin.zip"
+  "download_url": "https://plugins.example.com/plugin.zip",
+  "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 }
 ```
 
-The endpoint downloads the ZIP from the given URL, extracts it, and verifies `plugin.php`. It is used by the plugin marketplace placeholder.
+The endpoint is disabled by default. Enable it with `plugin_remote_install_enabled=1` and configure `plugin_remote_install_hosts` with a comma-separated allowlist (wildcards such as `*.cdn.example.com` are accepted). Requests require HTTPS on port 443, a 64-character SHA-256, a public host/IP, and at most three redirects. Downloads are capped at 20MB. The ZIP then goes through `PackageInstaller`.
 
 Success response:
 
 ```json
 {
   "success": true,
-  "message": "安装成功"
+  "slug": "plugin-slug",
+  "message": "安装成功",
+  "plugin_info": {}
 }
 ```
 

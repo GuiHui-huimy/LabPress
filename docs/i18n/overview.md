@@ -2,15 +2,15 @@
 
 This chapter explains how LabPress separates interface translation from content translation, how the active locale is resolved for the frontend and the admin panel, and how the Dynamic Multi-Language plugin fits into that design.
 
-The short version is: **core language packs translate code-level strings; Dynamic Multi-Language translates database content; the two layers meet at the `translate` filter.** In v1.1.1 the boundaries are stricter than in earlier releases, which matters when upgrading a plugin or a custom language pack.
+The short version is: **core language packs translate code-level strings; Dynamic Multi-Language translates database content; the two layers meet at the `translate` filter.** In v1.3.0, `Translator` provides a deterministic fallback chain and plugins use the `plugin:{slug}` namespace.
 
 ## 1. Architecture at a glance
 
 | Layer | Storage | What it translates | Who owns it |
 |-------|---------|--------------------|-------------|
-| Static interface | `languages/{locale}/*.php` | Labels, buttons, validation messages, default template text | Core |
+| Static interface | `languages/{locale}/*.php` + `locale.json` | Labels, buttons, validation messages, default template text | Core |
 | Dynamic content | `ml_translations` | Navigation titles, slide text, About Us, research fields, statistic labels | Dynamic Multi-Language |
-| Plugin interface | `plugins/{slug}/languages/{locale}.php` | Strings owned by a plugin | The plugin itself |
+| Plugin interface | `plugins/{slug}/languages/{locale}/plugin.php` | Strings owned by a plugin | The plugin itself |
 
 ```mermaid
 flowchart TD
@@ -58,18 +58,26 @@ languages/
 │   ├── projects.php
 │   ├── tools.php
 │   └── publications.php
-└── en_US/
-    ├── lang.config
-    ├── common.php
-    ├── index.php
-    ├── admin.php
-    ├── news.php
-    ├── projects.php
-    ├── tools.php
-    └── publications.php
+├── en_US/
+│   ├── lang.config
+│   ├── common.php
+│   ├── index.php
+│   ├── admin.php
+│   ├── news.php
+│   ├── projects.php
+│   ├── tools.php
+│   └── publications.php
+└── ja_JP/
+    └── locale.json
 ```
 
-`lang.config` supplies the display metadata used by both language switchers:
+`lang.config` supplies the display metadata used by both language switchers. A newer locale can use `locale.json` instead:
+
+```json
+{"name":"日本語","locale":"ja_JP","flag":"🇯🇵","fallback":"en_US"}
+```
+
+`ja_JP` currently declares `en_US` as its fallback; missing Japanese keys resolve to English rather than rendering a bare key.
 
 ```php
 <?php
@@ -107,20 +115,13 @@ This reads `languages/{locale}/index.php`. For a plugin-owned string, the module
 __('ml_plugin_name', 'plugin:dynamic-multilang');
 ```
 
-The plugin branch reads `plugins/dynamic-multilang/languages/{locale}.php` directly and looks up the key inside that file. It does not merge the plugin array into the core namespace.
+The plugin branch reads `plugins/{slug}/languages/{locale}/plugin.php` directly and looks up the key inside that file. It does not merge the plugin array into the core namespace. The legacy `languages/{locale}.php` path remains a fallback.
 
-### 2.3 What changed in 1.1.1
+### 2.3 Fallback chain
 
-Before 1.1.1, core `__()` merged active plugin language files into the core lookup. That made plugin strings appear to work without a module prefix, but it also created collisions and made deactivation behavior unpredictable.
+`Translator` replaces the ad-hoc loader. It resolves an exact locale, the language family (`en`), the locale metadata fallback (`en_US`), and the site default in that order. Each lookup is isolated by `locale + module`, so a plugin catalog cannot leak into core keys. `ja_JP` uses this chain until a full Japanese catalog is added.
 
-In 1.1.1:
-
-- core modules are loaded from `languages/{locale}/{module}.php`;
-- plugin modules must use `plugin:{slug}`;
-- only the requested plugin file is parsed;
-- a missing plugin file returns the key and records the path in `$GLOBALS['lp_i18n_missing']` when `LABPRESS_DEBUG` is on.
-
-If an upgrade suddenly shows raw keys such as `ml_plugin_name`, the first check is the second argument of `__()`. It is almost always missing the `plugin:` prefix.
+The same `plugin:` rule applies to the manifest and settings pages. If an upgrade suddenly shows raw keys such as `ml_plugin_name`, the first check is the second argument of `__()`. It is almost always missing the `plugin:` prefix.
 
 ## 3. Locale resolution
 
@@ -154,10 +155,12 @@ $adminLocale = LabPress_Hooks::applyFilters('admin_locale', $defaultLocale, $ava
 
 The return value must be a string present in `$availLocales`; otherwise `getLocale()` falls back to the site default. This validation is the reason a plugin cannot accidentally force an unavailable locale.
 
+The admin branch is deliberately **not** cached. Plugins load before `IS_ADMIN` is defined, and an early `__()` call must not freeze the locale. Each admin read re-applies `admin_locale`, so a `?lang=` switch, a session change, or a plugin deactivation takes effect on the same request.
+
 The Dynamic Multi-Language plugin implements the filter with `ml_admin_locale`, backed by a session value and a dedicated cookie. The login page and admin topbar render the switcher. Deactivating the plugin removes the callback, and the admin panel returns to the site default without any core code change.
 
 ![Admin interface switched to English while the site keeps its content locale](../assets/contentImag/Gettingstart/v111-dashboard-en.png)
-> **Figure 1.** The same v1.1.1 installation with the admin interface switched to English. The account chip and **中文 / English** switcher live in the topbar.
+> **Figure 1.** The same installation with the admin interface switched to English. The account chip and **中文 / English** switcher live in the topbar.
 
 The order matters: `getLocale()` is called after `loadPlugins()` at the end of `includes/functions.php`, so plugin filters are registered before the first admin locale resolution.
 

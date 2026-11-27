@@ -388,4 +388,5 @@ return [
     'chart_empty' => 'No data yet',
     // 侧边栏
     'admin_panel' => 'Admin Panel',
+    'no_version_record' => 'No version records',
 ];

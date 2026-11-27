@@ -8,8 +8,8 @@ For procedural setup, use [Installation](installation.md); for first-run checks,
 
 | Layer | Storage | Examples | Edited by |
 | --- | --- | --- | --- |
-| Environment | `storage/config/site.php` (v1.2.0 推荐) | Database host/name/user/password, timezone, session cookie, debug | Server operator, via file editor or deployment secret |
-| Compatibility | `includes/config.php` | `DB_*` constants fallback for v1.1.1 deployments | Server operator |
+| Environment | `storage/config/site.php` (preferred) | Database host/name/user/password, timezone, session cookie, debug | Server operator, via file editor or deployment secret |
+| Compatibility | `includes/config.php` | `DB_*` constants fallback for legacy deployments | Server operator |
 | Site | `site_config` table | Site name, browser title format, default language, About Us, statistics, research cards | Administrator, via **Settings → Site Config** |
 | Plugin state | `plugins` table + plugin files | Enabled/disabled status, plugin header metadata | Administrator, via **Plugins** |
 | Runtime | PHP INI / FPM pool | Upload size, memory, execution time, error display | Hosting panel or `php.ini` |

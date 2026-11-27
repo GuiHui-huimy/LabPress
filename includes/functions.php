@@ -552,22 +552,19 @@ function getFullTitle($pageTitle = '', $suffix = '') {
  * 后台：默认站点语言，允许 admin_locale 过滤器接管（插件可选）
  */
 function getLocale() {
+    $available = getAvailableLanguages();
+    $availLocales = array_column($available, 'locale');
+    $defaultLocale = LabPress::config('language', 'zh_CN');
+
+    // 后台不缓存：插件文件加载时可能提前调用 __()，此时 IS_ADMIN 尚未定义，
+    // 不能用那次结果污染后续的 admin_locale 过滤器。
+    if (defined('IS_ADMIN') || strpos($_SERVER['SCRIPT_NAME'] ?? '', '/admin/') !== false) {
+        $adminLocale = LabPress_Hooks::applyFilters('admin_locale', $defaultLocale, $availLocales);
+        return is_string($adminLocale) && in_array($adminLocale, $availLocales, true) ? $adminLocale : $defaultLocale;
+    }
+
     static $locale = null;
     if ($locale === null) {
-        $available = getAvailableLanguages();
-        $availLocales = array_column($available, 'locale');
-        $defaultLocale = LabPress::config('language', 'zh_CN');
-
-        // 后台默认跟随站点语言；插件可通过 admin_locale 过滤器提供独立的后台语言
-        if (defined('IS_ADMIN') || strpos($_SERVER['SCRIPT_NAME'] ?? '', '/admin/') !== false) {
-            $adminLocale = LabPress_Hooks::applyFilters('admin_locale', $defaultLocale, $availLocales);
-            if (!is_string($adminLocale) || !in_array($adminLocale, $availLocales, true)) {
-                $adminLocale = $defaultLocale;
-            }
-            $locale = $adminLocale;
-            return $locale;
-        }
-
         // 前台逻辑：URL参数 > Cookie > 系统配置
         if (!empty($_GET['lang']) && in_array($_GET['lang'], $availLocales)) {
             $locale = $_GET['lang'];
@@ -595,68 +592,8 @@ function getLocale() {
  * @return string
  */
 function __($key, $module = 'common') {
-    static $lang = [];
-    static $loadedModules = [];
-
     $locale = getLocale();
-    $baseDir = __DIR__ . '/../languages/';
-
-    // 1. 加载核心公共语言包
-    if (!isset($loadedModules['common'])) {
-        $file = "{$baseDir}{$locale}/common.php";
-        if (file_exists($file)) {
-            $lang = array_merge($lang, include $file);
-        }
-        $loadedModules['common'] = true;
-    }
-
-    // 2. 加载核心模块语言包（插件模块必须走 plugin: 前缀）
-    if ($module !== 'common' && strpos($module, 'plugin:') !== 0 && !isset($loadedModules[$module])) {
-        $file = "{$baseDir}{$locale}/{$module}.php";
-        if (file_exists($file)) {
-            $lang = array_merge($lang, include $file);
-        }
-        $loadedModules[$module] = true;
-    }
-
-    // 3. 显式插件语言包：v1.3.0 优先 languages/{locale}/plugin.php，
-    //    旧插件仍保留 languages/{locale}.php 兼容一个版本。
-    if (strpos($module, 'plugin:') === 0) {
-        $pluginSlug = substr($module, 7);
-        $pluginSlug = preg_replace('/[^a-zA-Z0-9_-]/', '', $pluginSlug);
-        $pluginDir = __DIR__ . "/../plugins/{$pluginSlug}/languages/";
-        $pluginLangFile = $pluginDir . "{$locale}/plugin.php";
-        if (!file_exists($pluginLangFile)) {
-            $pluginLangFile = $pluginDir . "{$locale}.php";
-        }
-        if (file_exists($pluginLangFile)) {
-            $pluginLang = include $pluginLangFile;
-            // 直接在当前调用中查找该插件语言包，避免污染全局 $lang
-            $value = $pluginLang;
-            foreach (explode('.', $key) as $segment) {
-                if (!is_array($value) || !array_key_exists($segment, $value)) {
-                    return LabPress_Hooks::applyFilters('translate', $key, $key, $locale, $module);
-                }
-                $value = $value[$segment];
-            }
-            return LabPress_Hooks::applyFilters('translate', $value, $key, $locale, $module);
-        }
-        // 如果插件语言文件不存在，回退到键名（调试信息写入全局变量供开发面板读取）
-        if (defined('LABPRESS_DEBUG') && LABPRESS_DEBUG) {
-            $GLOBALS['lp_i18n_missing'][] = $pluginLangFile;
-        }
-        return LabPress_Hooks::applyFilters('translate', $key, $key, $locale, $module);
-    }
-
-    // 4. 从核心语言数组中查找翻译
-    $value = $lang;
-    foreach (explode('.', $key) as $segment) {
-        if (!is_array($value) || !array_key_exists($segment, $value)) {
-            return LabPress_Hooks::applyFilters('translate', $key, $key, $locale, $module);
-        }
-        $value = $value[$segment];
-    }
-
+    $value = \LabPress\I18n\Translator::get((string)$key, (string)$module, $locale);
     return LabPress_Hooks::applyFilters('translate', $value, $key, $locale, $module);
 }
 
@@ -672,21 +609,7 @@ function _e($key, $module = 'common') {
  * @return array
  */
 function getAvailableLanguages() {
-    $baseDir = __DIR__ . '/../languages/';
-    $languages = [];
-    if (!is_dir($baseDir)) return $languages;
-
-    $dirs = scandir($baseDir);
-    foreach ($dirs as $dir) {
-        if ($dir === '.' || $dir === '..' || !is_dir($baseDir . $dir)) continue;
-        $configFile = $baseDir . $dir . '/lang.config';
-        if (file_exists($configFile)) {
-            $config = include $configFile;
-            $config['locale'] = $dir; // 确保 locale 与目录名一致
-            $languages[] = $config;
-        }
-    }
-    return $languages;
+    return \LabPress\I18n\Translator::available();
 }
 
 /**

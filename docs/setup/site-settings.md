@@ -85,7 +85,7 @@ Two related fields control the site identity:
 
 The site name is typically a concise label such as `HUI-MY.LAB`, while the site title may be a longer descriptive phrase.
 
-The site name is used by the `FooterInfo` plugin as the `{site_name}` placeholder. It is also displayed in the admin panel header.
+The site name is used by the `footer-info` plugin as the `{site_name}` placeholder. It is also displayed in the admin panel header.
 
 ### 3.3 Title Format
 

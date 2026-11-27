@@ -21,11 +21,15 @@ final class Settings
     private static array $schemas = [];
     /** @var array<string,bool> */
     private static array $registered = [];
+    /** @var array<string,string> */
+    private static array $pageSlugs = [];
+    /** @var array<string,string> */
+    private static array $pageModules = [];
 
     /**
      * @param array<int,array<string,mixed>> $schema
      */
-    public static function register(string $slug, array $schema, string $title = '', string $permission = 'all'): void
+    public static function register(string $slug, array $schema, string $title = '', string $permission = 'all', string $pageSlug = '', string $titleModule = ''): void
     {
         $slug = self::normalizeSlug($slug);
         if ($slug === '') {
@@ -35,7 +39,10 @@ final class Settings
         if ($title === '' || isset(self::$registered[$slug])) {
             return;
         }
-        $pageSlug = 'plugin-settings-' . $slug;
+        $pageSlug = $pageSlug !== '' ? preg_replace('/[^a-zA-Z0-9_-]/', '', $pageSlug) : 'plugin-settings-' . $slug;
+        if ($pageSlug === '') {
+            $pageSlug = 'plugin-settings-' . $slug;
+        }
         Registry::register(
             $pageSlug,
             $title,
@@ -45,6 +52,10 @@ final class Settings
             $permission,
             $permission
         );
+        self::$pageSlugs[$slug] = $pageSlug;
+        if ($titleModule !== '') {
+            self::$pageModules[$slug] = $titleModule;
+        }
         self::$registered[$slug] = true;
     }
 
@@ -74,6 +85,16 @@ final class Settings
         }
         $saved = self::read($slug);
         return array_replace($defaults, $saved);
+    }
+
+    /**
+     * Return only values persisted in plugins.settings_json, without defaults.
+     *
+     * @return array<string,mixed>
+     */
+    public static function saved(string $slug): array
+    {
+        return self::read(self::normalizeSlug($slug));
     }
 
     /**
@@ -107,32 +128,32 @@ final class Settings
             }
             $value = trim((string)$raw);
             if (!empty($field['required']) && $value === '') {
-                $errors[] = (string)($field['label'] ?? $key) . ' 不能为空。';
+                $errors[] = self::fieldLabel($field) . ' 不能为空。';
                 continue;
             }
             if (isset($field['maxlength']) && mb_strlen($value) > (int)$field['maxlength']) {
-                $errors[] = (string)($field['label'] ?? $key) . ' 超过长度限制。';
+                $errors[] = self::fieldLabel($field) . ' 超过长度限制。';
                 continue;
             }
             if ($type === 'number' && $value !== '' && !is_numeric($value)) {
-                $errors[] = (string)($field['label'] ?? $key) . ' 必须是数字。';
+                $errors[] = self::fieldLabel($field) . ' 必须是数字。';
                 continue;
             }
             if ($type === 'select') {
                 $options = is_array($field['options'] ?? null) ? $field['options'] : [];
                 if (!array_key_exists($value, $options)) {
-                    $errors[] = (string)($field['label'] ?? $key) . ' 不是有效选项。';
+                    $errors[] = self::fieldLabel($field) . ' 不是有效选项。';
                     continue;
                 }
             }
             if (in_array($type, ['url', 'email'], true) && $value !== '') {
                 $filter = $type === 'url' ? FILTER_VALIDATE_URL : FILTER_VALIDATE_EMAIL;
                 if (filter_var($value, $filter) === false) {
-                    $errors[] = (string)($field['label'] ?? $key) . ' 格式不正确。';
+                    $errors[] = self::fieldLabel($field) . ' 格式不正确。';
                     continue;
                 }
                 if ($type === 'url' && !preg_match('#^https?://#i', $value)) {
-                    $errors[] = (string)($field['label'] ?? $key) . ' 必须以 http(s):// 开头。';
+                    $errors[] = self::fieldLabel($field) . ' 必须以 http(s):// 开头。';
                     continue;
                 }
             }
@@ -223,7 +244,7 @@ final class Settings
                 continue;
             }
             $type = (string)($field['type'] ?? 'text');
-            $label = (string)($field['label'] ?? $key);
+            $label = self::fieldLabel($field);
             $value = (string)($values[$key] ?? '');
             $required = !empty($field['required']) ? ' required' : '';
             echo '<p><label for="lp-setting-' . $e($key) . '">' . $e($label) . '</label><br>';
@@ -233,7 +254,7 @@ final class Settings
                 echo '<select id="lp-setting-' . $e($key) . '" name="settings[' . $e($key) . ']"' . $required . '>';
                 foreach ((array)($field['options'] ?? []) as $optionValue => $optionLabel) {
                     $selected = (string)$optionValue === $value ? ' selected' : '';
-                    echo '<option value="' . $e($optionValue) . '"' . $selected . '>' . $e($optionLabel) . '</option>';
+                    echo '<option value="' . $e($optionValue) . '"' . $selected . '>' . $e(self::optionLabel($field, (string)$optionLabel)) . '</option>';
                 }
                 echo '</select>';
             } elseif ($type === 'checkbox') {
@@ -254,8 +275,30 @@ final class Settings
 
     private static function pageTitle(string $slug): string
     {
-        $page = Registry::get('plugin-settings-' . $slug);
-        return (string)($page['title'] ?? ('插件设置：' . $slug));
+        $pageSlug = self::$pageSlugs[$slug] ?? ('plugin-settings-' . $slug);
+        $page = Registry::get($pageSlug);
+        $title = (string)($page['title'] ?? ('插件设置：' . $slug));
+        $module = self::$pageModules[$slug] ?? '';
+        return $module !== '' && function_exists('__') ? (string)__($title, $module) : $title;
+    }
+
+    /**
+     * @param array<string,mixed> $field
+     */
+    private static function fieldLabel(array $field): string
+    {
+        $label = (string)($field['label'] ?? $field['key'] ?? '');
+        $module = (string)($field['label_module'] ?? '');
+        return $module !== '' && function_exists('__') ? (string)__($label, $module) : $label;
+    }
+
+    /**
+     * @param array<string,mixed> $field
+     */
+    private static function optionLabel(array $field, string $label): string
+    {
+        $module = (string)($field['options_module'] ?? $field['label_module'] ?? '');
+        return $module !== '' && function_exists('__') ? (string)__($label, $module) : $label;
     }
 
     private static function normalizeSlug(string $slug): string

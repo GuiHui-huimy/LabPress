@@ -58,9 +58,9 @@ class LabPress
     /**
      * v1.3.0 插件设置：注册 schema 后由核心渲染表单，值存 plugins.settings_json。
      */
-    public static function registerSettings($slug, $schema, $title = '', $permission = 'all')
+    public static function registerSettings($slug, $schema, $title = '', $permission = 'all', $pageSlug = '')
     {
-        \LabPress\Plugin\Settings::register((string)$slug, (array)$schema, (string)$title, (string)$permission);
+        \LabPress\Plugin\Settings::register((string)$slug, (array)$schema, (string)$title, (string)$permission, (string)$pageSlug);
     }
 
     public static function settings($slug, $key, $default = null)

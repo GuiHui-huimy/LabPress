@@ -28,7 +28,7 @@ Use the administrator account created in the installer. There is no built-in def
 
 After login, the dashboard shows content counts plus the v1.2.0 ECharts overview: content mix, project categories, and the 14-day new-content trend. If you installed demo data, the site already contains six projects, four sample publications, three news posts and three tools; a blank install starts with only the administrator and base settings.
 
-![v1.1.1 administrator dashboard](../assets/contentImag/Gettingstart/v111-dashboard-zh.png)
+![Administrator dashboard](../assets/contentImag/Gettingstart/v111-dashboard-zh.png)
 > The dashboard after the first login. v1.2.0 adds the data-overview charts below the existing content cards.
 
 ## 2. Secure the Installer Administrator
@@ -56,7 +56,7 @@ Open **Settings → Site Config**. Check:
 - About Us copy;
 - statistics labels and values;
 - research direction cards;
-- footer text if FooterInfo is active.
+- footer text if Footer Info is active.
 
 The sample values are placeholders. Replace them before inviting visitors, because the homepage and every page title inherit these settings.
 
@@ -90,11 +90,11 @@ Open **Plugins → Installed Plugins**.
 
 LabPress ships with:
 
-- **FooterInfo** — footer text and simple footer styling.
-- **Dynamic Multi-Language** — database-content translation and the backend language switcher.
+- **Footer Info** 3.0 — footer text and simple footer styling, managed by the Settings API.
+- **Dynamic Multi-Language** 3.0 — database-content translation and the backend language switcher.
 - **hello-word** — a development example, safe to leave inactive.
 
-Activate FooterInfo if you need editable footer content. Activate Dynamic Multi-Language only if the site actually serves more than one content language; otherwise it adds an admin page and translation tables that are not being used.
+Activate Footer Info if you need editable footer content. Activate Dynamic Multi-Language only if the site actually serves more than one content language; otherwise it adds an admin page and translation tables that are not being used.
 
 If a plugin directory exists but is not listed, use **Scan for new plugins** first. If activation fails, check the plugin header and the `plugins` table before uploading a new copy.
 

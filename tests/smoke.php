@@ -103,15 +103,15 @@ check('Admin Registry exception catch', strpos($errorHtml, 'Page error') !== fal
 // Plugin Manager
 $plugins = \LabPress\Plugin\Manager::discover();
 check('Plugin discover', count($plugins) >= 2, (string)count($plugins));
-check('Plugin active slugs', in_array('FooterInfo', \LabPress\Plugin\Manager::activeSlugs(), true));
-$footerHeader = \LabPress\Plugin\Manager::parseHeader(__DIR__ . '/../plugins/FooterInfo/plugin.php');
-check('Plugin header parse', ($footerHeader['name'] ?? '') === 'FooterInfo');
-check('Plugin requires core', ($footerHeader['requires_core'] ?? '') !== '');
+check('Plugin active slugs', in_array('footer-info', \LabPress\Plugin\Manager::activeSlugs(), true));
+$footerManifest = json_decode((string)file_get_contents(__DIR__ . '/../plugins/footer-info/plugin.json'), true);
+check('Plugin manifest parse', ($footerManifest['name'] ?? '') === 'Footer Info');
+check('Plugin requires core', ($footerManifest['requires']['core'] ?? '') !== '');
 
 // 迁移
 $runner = new \LabPress\Migration\Runner($pdo, __DIR__ . '/../migrations');
 $status = $runner->status();
-check('Migration count', count($status) === 4, (string)count($status));
+check('Migration count', count($status) === 7, (string)count($status));
 foreach ($status as $row) {
     check('Migration applied: ' . $row['version'], $row['applied'] === true);
 }

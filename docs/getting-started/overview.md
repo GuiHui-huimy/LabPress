@@ -49,7 +49,7 @@ The two features that most strongly distinguish LabPress from a generic CMS are:
 
 ## 4. Architecture at a Glance
 
-The important detail in 1.1.1 is boot order: plugins are loaded **before** the early locale resolution. That is what allows a plugin to answer the `admin_locale` filter on the very first request.
+Boot order matters because plugins load before the admin panel renders. In v1.3.0, `getLocale()` no longer caches the admin branch, so a plugin calling `__()` during load cannot freeze the locale before `IS_ADMIN` is known.
 
 ```mermaid
 flowchart LR
@@ -190,10 +190,11 @@ LabPress/
 │   └── footer.php
 ├── languages/
 │   ├── zh_CN/                    # core language pack
-│   └── en_US/
+│   ├── en_US/
+│   └── ja_JP/                    # metadata; falls back to en_US
 ├── plugins/
-│   ├── dynamic-multilang/        # 2.0.2
-│   ├── FooterInfo/
+│   ├── dynamic-multilang/        # 3.0.0
+│   ├── footer-info/              # 3.0.0
 │   └── hello-word/
 ├── uploads/                      # runtime uploads
 ├── install/                      # browser/CLI installer classes and views
@@ -252,18 +253,20 @@ The pages are intentionally cross-linked. A content page explains the admin work
 1. [Internationalization Overview](../i18n/overview.md)
 2. [Core Language Packs](../i18n/core-lang.md)
 3. [Dynamic Multi-Language](../i18n/dynamic-multilang.md)
-4. [Changelog 1.1.1](../changelog.md), especially the locale-order fix
+4. [Changelog 1.3.0](../changelog.md), especially the plugin contract and translation model
 
-## 9. What Changed in 1.1.1 That Affects Readers
+## 9. What Changed in 1.3.0 That Affects Readers
 
-- The admin language switch is now genuinely independent from the public `lang` cookie. Do not test it only by switching the frontend; test `/admin/login.php?lang=zh_CN` and reload the panel.
-- Plugin language files must be requested with `plugin:{slug}`. If you are porting an older plugin that relied on automatic merging, move its strings into its own `languages/{locale}.php` and update every `__()` call.
-- The public navigation account entry is rendered by `includes/header.php`. It is visible on every public page, not only the homepage.
-- `admin/login.php` accepts `redirect=home`. The value is allow-listed; arbitrary URLs are ignored.
+- Plugins may now ship a `plugin.json` manifest. The manifest wins over the PHP header for version, dependencies, settings schema, and provided capabilities.
+- Plugin activation checks dependencies before loading. A plugin that requires a missing or conflicting plugin is rejected with a structured error.
+- Plugin settings belong in `plugins.settings_json`; both official plugins moved to the Settings API.
+- Plugin UI strings prefer `plugins/{slug}/languages/{locale}/plugin.php`; old single-file language packs still load through the Translator fallback.
+- The translation workbench is entity-driven. Tabs come from `EntityRegistry`, not hard-coded plugin markup.
+- Core language lookup now has a real fallback chain: exact locale → language family → declared fallback → site default → key.
 
 ## 10. Next Steps
 
 - New installation: [Installation Guide](installation.md).
-- Existing 1.1.0 site: [Changelog → Upgrade Notes](../changelog.md#upgrade-notes).
+- Existing 1.2.0 site: [v1.3.0 Upgrade](upgrade-v1.3.0.md).
 - First plugin: [Plugin System Introduction](../plugins-dev/intro.md).
 - Language boundary: [Core Language Packs](../i18n/core-lang.md).

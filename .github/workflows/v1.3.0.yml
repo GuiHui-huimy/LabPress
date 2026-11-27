@@ -1,4 +1,4 @@
-name: v1.2.0 smoke
+name: v1.3.0 smoke
 
 on:
   push:
@@ -12,7 +12,9 @@ on:
       - 'bin/**'
       - 'tests/**'
       - 'plugins/**'
-      - '.github/workflows/v1.2.0.yml'
+      - 'languages/**'
+      - 'tools/**'
+      - '.github/workflows/v1.3.0.yml'
   pull_request:
     paths:
       - 'core/**'
@@ -23,6 +25,8 @@ on:
       - 'bin/**'
       - 'tests/**'
       - 'plugins/**'
+      - 'languages/**'
+      - 'tools/**'
 
 jobs:
   smoke:
@@ -67,10 +71,18 @@ jobs:
 
       - name: PHP syntax
         run: |
-          find core includes install migrations bin tests plugins -name '*.php' -print0 \
+          find core includes install migrations bin tests plugins tools -name '*.php' -print0 \
             | xargs -0 -n1 php -l
           php -l install.php
           php -l admin/views/dashboard.php
+
+      - name: i18n coverage
+        run: php tools/i18n-check.php
+
+      - name: Plugin manifests
+        run: |
+          php tools/lint-plugin.php plugins/footer-info --strict-version-sync --strict-php-header
+          php tools/lint-plugin.php plugins/dynamic-multilang --strict-version-sync --strict-php-header
 
       - name: Migrations
         run: |

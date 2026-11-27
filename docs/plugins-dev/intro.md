@@ -60,16 +60,19 @@ Each plugin occupies its own directory. The directory name is the plugin slug an
 
 ```
 plugins/
-├── FooterInfo/
-│   └── plugin.php
+├── footer-info/
+│   ├── plugin.json
+│   ├── plugin.php
+│   └── languages/{locale}/plugin.php
 ├── dynamic-multilang/
+│   ├── plugin.json
 │   ├── plugin.php
 │   └── admin-page.php
 └── hello-word/
     └── plugin.php
 ```
 
-The plugin slug must match the directory name exactly because the database registration and the plugin loading process both rely on this value.
+The plugin slug must match the directory name exactly because the database registration and the plugin loading process both rely on this value. `plugin.json` is optional for legacy plugins but required for new Manifest v2 packages.
 
 ### 2.3 `plugins` Database Table
 
@@ -309,7 +312,7 @@ A key design goal of the plugin system is zero coupling. The core never referenc
 Examples:
 
 - The Dynamic Multi-Language plugin translates dynamic content using the `translate` filter. The core template only calls `__()`. It has no knowledge of the plugin.
-- The FooterInfo plugin adds footer text using the `footer_scripts` action. The footer template only fires the hook.
+- The Footer Info plugin adds footer text using the `footer_scripts` action and stores its settings through the Plugin Settings API. The footer template only fires the hook.
 - Menu items are translated through the `nav_menu_item` filter. The header and footer templates apply this filter without knowing which plugins are active.
 
 This design means that disabling or uninstalling all plugins leaves a fully functional core site that simply loses the extra plugin-provided features.

@@ -390,4 +390,5 @@ return [
     'chart_empty' => '暂无数据',
     // 侧边栏
     'admin_panel' => '管理后台',
+    'no_version_record' => '暂无版本记录',
 ];

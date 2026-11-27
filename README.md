@@ -18,13 +18,13 @@
 <a href="https://comm.huimy.top" target="_blank">
   <img src="https://img.shields.io/badge/Forum-Discourse-blue?style=flat-square&logo=discourse" alt="Forum">
 </a>
-  <img src="https://img.shields.io/badge/PHP-7.4%2B-blue" alt="PHP Version">
+  <img src="https://img.shields.io/badge/PHP-8.1%2B-blue" alt="PHP Version">
   <img src="https://img.shields.io/badge/MySQL-5.7%2B-orange" alt="MySQL Version">
   <img src="https://img.shields.io/badge/License-GPL%20v3-blue" alt="License">
 </p>
 
 <p align="center">
-  Built with pure PHP &amp; MySQL, LabPress features a powerful hook-driven plugin system and comprehensive internationalization (i18n). It enables research laboratories to set up a professional bilingual (Chinese/English) academic website within minutes.
+  Built with pure PHP &amp; MySQL, LabPress features a powerful hook-driven plugin system and comprehensive internationalization (i18n). It enables research laboratories to set up a professional multilingual academic website within minutes.
 </p>
 
 <p align="center">
@@ -46,7 +46,7 @@
 
 ### Specialized Academic Modules
 
-Built-in publications, project showcases, research news, and The research tools or projects that you have developed management with version tracking. Ready to use out of the box for any research domain.
+Built-in publications, project showcases, research news, and research-tool/project management with version tracking. Ready to use out of the box for any research domain.
 
 ### Hook-Driven Plugin System
 
@@ -94,7 +94,7 @@ Or download the ZIP package and extract it to your web root directory.
 
 ### 2. Create an Empty Database (Recommended)
 
-Create a MySQL/MariaDB database with `utf8mb4`, or let the installer create it if the database user has `CREATE DATABASE` permission. An empty database is expected; do not import old SQL dumps into a fresh v1.2.0 install.
+Create a MySQL/MariaDB database with `utf8mb4`, or let the installer create it if the database user has `CREATE DATABASE` permission. An empty database is expected; do not import old SQL dumps into a fresh install.
 
 ### 3. Open the Installer
 
@@ -108,7 +108,7 @@ Fill in the database host, port, database name, user, password, site URL and adm
 
 1. check the PHP extensions and `storage/` permissions;
 2. connect to MySQL and create the database if permitted;
-3. create all v1.2.0 tables and run the bundled migrations;
+3. create all core tables and run the bundled migrations;
 4. create the administrator and write `storage/config/site.php`;
 5. optionally install a newly written demo lab site;
 6. write `storage/install.lock` so the installer cannot run twice.
@@ -239,13 +239,13 @@ LabPress/
 │ ├── footer.php # Frontend footer
 │ └── labpress.php # LabPress core utility class (config, pages, etc.)
 │
-├── core/ # v1.2.0 kernel classes (Config, Hooks, Guard, Assets, Plugin, Migration)
+├── core/ # kernel classes (Config, Hooks, Guard, Assets, Plugin, Migration, I18n)
 ├── migrations/ # schema_version migrations
 ├── bin/migrate.php # CLI migration runner
 ├── storage/ # Deployment config, logs, writable runtime state
 │ ├── config/site.php # ignored, deployment credentials
 │ └── logs/ # app/audit logs
-├── tests/smoke.php # v1.2.0 smoke tests
+├── tests/smoke.php # smoke tests
 │
 ├── languages/ # Core language packs
 │ ├── zh_CN/
@@ -256,33 +256,42 @@ LabPress/
 │ │ ├── projects.php # Projects module strings
 │ │ ├── tools.php # Tools module strings
 │ │ └── publications.php # Publications module strings
-│ └── en_US/
-│ ├── lang.config
-│ ├── common.php
-│ ├── index.php
-│ ├── news.php
-│ ├── projects.php
-│ ├── tools.php
-│ └── publications.php
+│ ├── en_US/
+│ │ ├── lang.config
+│ │ ├── common.php
+│ │ ├── index.php
+│ │ ├── news.php
+│ │ ├── projects.php
+│ │ ├── tools.php
+│ │ └── publications.php
+│ └── ja_JP/
+│ └── locale.json # Metadata; falls back to en_US until a full pack lands
+│
+├── core/I18n/ # Translator, entity registry, translation repository
 │
 ├── plugins/ # Plugin directory
-│ ├── FooterInfo/ # Footer customization plugin
-│ │ └── plugin.php
-│ └── dynamic-multilang/ # Dynamic multi-language translation plugin
-│ ├── plugin.php # Plugin main file (hooks & filters)
-│ ├── admin-page.php # Admin management page
-│ ├── languages/
-│ │ └── zh_CN.php # Plugin UI language pack
+│ ├── footer-info/ # Footer Info 3.0 (Settings API)
+│ │ ├── plugin.json
+│ │ ├── plugin.php
+│ │ └── languages/{locale}/plugin.php
+│ └── dynamic-multilang/ # Dynamic Multi-Language 3.0
+│ ├── plugin.json
+│ ├── plugin.php # Hooks, filters and entity registration
+│ ├── admin-page.php # Translation workbench
+│ ├── languages/{locale}/plugin.php
 │ └── assets/
 │ ├── dm-admin.css # Admin panel styles
 │ └── dm-admin.js # Admin panel interactions
+│
+├── tools/i18n-check.php # CI translation coverage
+├── tools/lint-plugin.php # Plugin manifest/header lint
 │
 ├── uploads/ # User uploaded files (images, etc.)
 │
 ├── install/ # Browser / CLI installer
 │ ├── Installer.php # Connection, schema, config and lock flow
 │ ├── Schema.php # Fresh-install table definitions
-│ ├── DemoData.php # New v1.2.0 demo content
+│ ├── DemoData.php # Demo content for fresh installs
 │ └── views/ # Installer form, success and installed pages
 │
 ├── storage/ # Deployment config, install lock and logs

@@ -195,15 +195,20 @@ SQL,
 CREATE TABLE IF NOT EXISTS `ml_translations` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `table_name` VARCHAR(50) NOT NULL,
+  `entity` VARCHAR(50) NOT NULL DEFAULT '',
   `record_id` VARCHAR(255) NOT NULL,
+  `entity_id` VARCHAR(255) NOT NULL DEFAULT '',
   `field_name` VARCHAR(100) NOT NULL,
+  `field` VARCHAR(100) NOT NULL DEFAULT '',
   `locale` VARCHAR(10) NOT NULL,
   `translated_value` TEXT NULL,
   `source_locale` VARCHAR(10) NULL,
   `source_hash` CHAR(64) NULL,
   `status` VARCHAR(20) NOT NULL DEFAULT 'current',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_translation` (`table_name`,`record_id`,`field_name`,`locale`)
+  UNIQUE KEY `unique_translation` (`table_name`,`record_id`,`field_name`,`locale`),
+  UNIQUE KEY `unique_translation_v2` (`entity`,`entity_id`,`field`,`locale`),
+  KEY `idx_ml_entity_locale` (`entity`,`locale`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL,
             <<<'SQL'

@@ -465,8 +465,8 @@ final class DemoData
     private static function seedPlugins(PDO $pdo): void
     {
         $rows = [
-            ['FooterInfo', 'FooterInfo', '可编辑页脚信息，支持多行文字、占位符与自定义样式。', '2.1.0', 'LabPress Community', 1, '>=1.2.0'],
-            ['dynamic-multilang', 'Dynamic Multi-Language', '为导航、页脚、轮播图和站点介绍提供动态多语言翻译。', '2.0.2', 'LabPress Community', 0, '>=1.2.0'],
+            ['footer-info', 'Footer Info', '可编辑页脚信息，支持多行文字、占位符与自定义样式。', '3.0.0', 'LabPress Community', 1, '>=1.3.0'],
+            ['dynamic-multilang', 'Dynamic Multi-Language', '为导航、页脚、轮播图和站点介绍提供动态多语言翻译。', '3.0.0', 'LabPress Community', 0, '>=1.3.0'],
         ];
         $stmt = $pdo->prepare(
             'INSERT IGNORE INTO `plugins`

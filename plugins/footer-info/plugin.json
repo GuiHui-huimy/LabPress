@@ -1,0 +1,58 @@
+{
+  "slug": "footer-info",
+  "name": "Footer Info",
+  "version": "3.0.0",
+  "description": "Editable footer text with alignment, size, color, padding, and i18n support.",
+  "author": "LabPress Community",
+  "license": "GPL-3.0-or-later",
+  "requires": {
+    "core": ">=1.3.0",
+    "php": ">=8.1"
+  },
+  "provides": ["footer-info"],
+  "conflicts": [],
+  "settings": [
+    {
+      "key": "content",
+      "type": "textarea",
+      "label": "页脚内容",
+      "default": "© {year} {site_name}. All rights reserved.\nPowered by LabPress\nContact: admin@example.com",
+      "required": true,
+      "maxlength": 2000
+    },
+    {
+      "key": "align",
+      "type": "select",
+      "label": "对齐方式",
+      "options": {"left": "居左", "center": "居中", "right": "居右"},
+      "default": "center"
+    },
+    {
+      "key": "font_size",
+      "type": "select",
+      "label": "字体大小",
+      "options": {"0.75rem": "小", "0.9rem": "中", "1.1rem": "大"},
+      "default": "0.9rem"
+    },
+    {
+      "key": "color",
+      "type": "color",
+      "label": "文字颜色",
+      "default": "#666666"
+    },
+    {
+      "key": "padding",
+      "type": "select",
+      "label": "左右边距",
+      "options": {"0 10px": "10px", "0 20px": "20px", "0 30px": "30px", "0 40px": "40px"},
+      "default": "0 20px"
+    }
+  ],
+  "admin_pages": [
+    {
+      "slug": "footer-info-settings",
+      "title": "页脚信息",
+      "permission": "all"
+    }
+  ]
+}

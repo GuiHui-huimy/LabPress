@@ -20,17 +20,17 @@ Language packs are loaded separately from the database-backed translation system
 ```mermaid
 flowchart LR
     A[__ key, module] --> B{module starts with plugin:?}
-    B -->|No| C[languages/locale/common.php]
-    C --> D[languages/locale/module.php]
+    B -->|No| C[Translator: exact locale -> family -> fallback -> default]
+    C --> D[common.php + module.php]
     D --> E[dot-path lookup]
-    B -->|Yes| F[plugins/slug/languages/locale.php]
+    B -->|Yes| F[plugins/slug/languages/locale/plugin.php]
     F --> G[lookup inside plugin array]
     E --> H[translate filter]
     G --> H
     H --> I[return string or key]
 ```
 
-The diagram shows the important v1.1.1 boundary: a plugin file is never merged into the core array. It is read only for the current call and only when the caller asks for `plugin:{slug}`.
+The diagram shows the v1.3.0 boundary: a plugin file is never merged into the core array. It is read only for the current call and only when the caller asks for `plugin:{slug}`. `Translator` owns the fallback chain.
 
 ## 2. Directory Structure
 
@@ -47,15 +47,17 @@ languages/
 │   ├── projects.php
 │   ├── tools.php
 │   └── publications.php
-└── en_US/
-    ├── lang.config
-    ├── common.php
-    ├── index.php
-    ├── admin.php
-    ├── news.php
-    ├── projects.php
-    ├── tools.php
-    └── publications.php
+├── en_US/
+│   ├── lang.config
+│   ├── common.php
+│   ├── index.php
+│   ├── admin.php
+│   ├── news.php
+│   ├── projects.php
+│   ├── tools.php
+│   └── publications.php
+└── ja_JP/
+    └── locale.json
 ```
 
 Each language directory contains:
@@ -98,6 +100,11 @@ The `locale` value should match the directory name exactly. The `getAvailableLan
 The metadata is used by:
 
 - The frontend language switcher.
+- The admin language switcher.
+- `Translator::chain()` for the declared `fallback` (for example `ja_JP → en_US`).
+
+A locale that has no full language files can still be listed with a `locale.json` metadata file. In 1.3.0 this is how `ja_JP` is introduced before a complete Japanese catalog is authored.
+
 - The **Site Language** dropdown in the admin settings page.
 - The Dynamic Multi-Language plugin’s source locale selector.
 

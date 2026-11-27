@@ -193,6 +193,8 @@ LabPress_Hooks::addAction('plugin_uninstalled', function($slug) {
 
 As with the activation hook, this registration should occur outside the `init` callback.
 
+For plugin configuration, prefer `Settings::register()` over a custom table. The API renders the form, validates input, and stores values in `plugins.settings_json`. Keep a custom table only when migrating an older plugin or when the data is genuinely relational.
+
 ## 6. Adding Plugin Language Files
 
 Plugins can provide their own language files to translate interface strings.
@@ -200,7 +202,7 @@ Plugins can provide their own language files to translate interface strings.
 Create the following file:
 
 ```
-plugins/my-first-plugin/languages/zh_CN.php
+plugins/my-first-plugin/languages/zh_CN/plugin.php
 ```
 
 with content:
@@ -213,7 +215,7 @@ return [
 ];
 ```
 
-And `en_US.php` with:
+And `plugins/my-first-plugin/languages/en_US/plugin.php` with:
 
 ```php
 <?php
