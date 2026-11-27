@@ -38,7 +38,7 @@ The two features that most strongly distinguish LabPress from a generic CMS are:
 
 | Layer | Technology | Notes |
 | --- | --- | --- |
-| Runtime | PHP 7.4+ | No framework; PDO for database access. |
+| Runtime | PHP 8.1+ | No framework; PDO for database access; mbstring and session required. |
 | Database | MySQL 5.7+ / MariaDB 10.3+ | UTF-8 (`utf8mb4`) tables. |
 | Frontend | HTML5, CSS3, vanilla JavaScript | EasyMDE and Isotope are bundled; Font Awesome is served from the local `assets/fontawesome/` directory. |
 | Admin UI | PHP views + CSS + vanilla JavaScript | Modal forms and table views; no React/Vue build. |
@@ -181,8 +181,8 @@ LabPress/
 │   └── fontawesome/              # local icon font + CSS
 ├── docs/                         # this MkDocs site
 ├── includes/
-│   ├── config.php                # database + session (deployment-owned)
-│   ├── config-sample.php
+│   ├── bootstrap.php             # autoload, config, session, PDO, errors
+│   ├── config.php                # legacy DB_* fallback only
 │   ├── functions.php             # helpers, plugin loader, i18n, locale resolution
 │   ├── hooks.php                 # LabPress_Hooks
 │   ├── labpress.php              # LabPress utility class
@@ -196,13 +196,16 @@ LabPress/
 │   ├── FooterInfo/
 │   └── hello-word/
 ├── uploads/                      # runtime uploads
+├── install/                      # browser/CLI installer classes and views
+├── storage/                      # config, install lock and logs
 ├── index.php                     # homepage, including the slide carousel
+├── install.php                   # first-run installer entry
 ├── publications.php
 ├── tools.php
 ├── projects.php
 ├── news.php
 ├── category.php
-└── labpressexample.sql
+└── bin/                          # install.php and migrate.php CLI helpers
 ```
 
 > The exact set of frontend entry files may grow as modules are added. The rule is stable: each public page is a standalone PHP entry file that includes shared config/helpers and calls the hook system at its output points.

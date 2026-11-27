@@ -1,14 +1,14 @@
 # Database Schema
 
-This chapter provides a technical reference for the MySQL database structure used by LabPress. It describes the tables created by the sample database dump, the purpose of each table, its columns, indexes, and relationships.
+This chapter provides a technical reference for the MySQL database structure used by LabPress. It describes the tables created by the v1.2.0 installer, the purpose of each table, its columns, indexes, and relationships.
 
-The reference is based on the `labpressexample.sql` file included in the LabPress repository. The sample dump was generated using MySQL 8.0.36 and may use the `utf8mb4_0900_ai_ci` collation. If you are using MySQL 5.7, you may need to replace that collation with `utf8mb4_general_ci` before importing.
+The reference follows `install/Schema.php`. Fresh installations build this schema directly; existing sites receive incremental changes through `migrations/`. Both use `utf8mb4` and `utf8mb4_unicode_ci` for MariaDB and MySQL compatibility.
 
 ---
 
 ## 1. Overview
 
-LabPress uses a single MySQL database to store all dynamic content, configuration, plugin metadata, and translations. The database name is not fixed and can be chosen during installation. The sample database is often named `labpressexample`.
+LabPress uses a single MySQL database to store all dynamic content, configuration, plugin metadata, and translations. The database name is chosen during installation, and the installer creates all core tables.
 
 The database contains the following tables:
 
@@ -24,9 +24,9 @@ The database contains the following tables:
 | `news` | Stores research news and announcements. |
 | `projects` | Stores research projects. |
 | `project_categories` | Stores project categories. |
-| `categories` | An additional category table present in the sample dump. |
 | `nav_menu` | Stores header and footer navigation menu items. |
 | `plugins` | Stores plugin registration metadata and activation status. |
+| `schema_version` | Stores applied migration versions. |
 | `footer_info` | Stores configuration for the FooterInfo plugin. |
 | `ml_translations` | Stores dynamic translations used by the Dynamic Multi-Language plugin. |
 
@@ -38,7 +38,7 @@ erDiagram
     nav_menu ||--o{ nav_menu : parents
 ```
 
-The diagram shows the enforced foreign-key relationships. `site_config` and `ml_translations` are application-level sidecars rather than foreign-key targets; the table sections below are authoritative for column types.
+The diagram shows logical relationships between content tables. The v1.2.0 installer intentionally omits database-level foreign keys for shared-host compatibility; the table sections below are authoritative for column types.
 
 ---
 
@@ -46,9 +46,9 @@ The diagram shows the enforced foreign-key relationships. `site_config` and `ml_
 
 - All tables use the InnoDB storage engine.
 - The default character set is `utf8mb4`.
-- The default collation in the sample dump is `utf8mb4_0900_ai_ci`.
+- The default collation is `utf8mb4_unicode_ci`, used by both the installer schema and migrations.
 - Primary keys are auto-incrementing integers except where a natural key is used, such as `slug` in `project_categories` and `config_key` in `site_config`.
-- Timestamps use MySQL `TIMESTAMP` or `DATETIME` types. The sample dump uses `TIMESTAMP` for created and updated fields where applicable.
+- Timestamps use MySQL `TIMESTAMP` or `DATETIME` types. New tables use `TIMESTAMP` for created and updated fields where applicable.
 - JSON fields are stored in MySQL `JSON` columns or as text containing JSON-encoded strings depending on the table.
 
 ---
@@ -281,9 +281,9 @@ Indexes:
 
 ---
 
-### 3.11 `categories`
+### 3.11 `categories_legacy` (existing sites only)
 
-An additional category table present in the sample dump. Its structure is identical to `project_categories`, but it is not referenced by other tables in the current code.
+Fresh v1.2.0 installs do not create this table. Existing sites may have `categories_legacy` after migration `20261125_0003`; it is not referenced by current code. Do not create it on a new database.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -389,20 +389,20 @@ Indexes:
 
 ## 4. Relationships
 
-The foreign key relationships defined in the sample dump are:
+The core schema keeps these relationships at the application level and does not add database foreign keys:
 
-- `tool_details.tool_name` → `tools.name` (`CASCADE` on delete and update)
-- `tool_versions.tool_name` → `tools.name` (`CASCADE` on delete and update)
-- `projects.category_slug` → `project_categories.slug` (`RESTRICT` on delete, `CASCADE` on update)
-- `nav_menu.parent_id` → `nav_menu.id` (`SET NULL` on delete, `CASCADE` on update)
+- `tool_details.tool_name` → `tools.name`
+- `tool_versions.tool_name` → `tools.name`
+- `projects.category_slug` → `project_categories.slug`
+- `nav_menu.parent_id` → `nav_menu.id`
 
-All other tables are independent or linked only by application-level logic rather than database constraints.
+Application code must keep these values consistent. Plugins that add their own tables may choose to declare foreign keys if the target host supports them.
 
 ---
 
 ## 5. Notes for Developers
 
-- The `categories` table appears in the sample dump but is not actively used by the current LabPress code. The `project_categories` table is the one referenced by the projects module.
+- Fresh installs do not create the legacy `categories` table; `project_categories` is the active table. Existing sites may retain `categories_legacy` after migration `20261125_0003`.
 - JSON fields such as `permissions`, `changes`, `downloads`, `research_cards`, and `stat_items` require proper encoding and decoding in PHP. The application uses `json_encode()` and `json_decode()` for this purpose.
 - The `site_config` table is a key-value store. Do not rely on a fixed set of rows; plugins may add their own configuration keys.
 - The `parent_id` column in `nav_menu` is reserved for future hierarchical menu support and is not currently used in rendering.
@@ -411,10 +411,10 @@ All other tables are independent or linked only by application-level logic rathe
 
 ## 6. Operational Checks
 
-- [ ] The imported dump uses a collation supported by the target MySQL version.
+- [ ] The installer completed without schema errors and `storage/install.lock` exists.
 - [ ] `site_config` contains `language`, `site_name`, and `title_format` after installation.
 - [ ] `tools.name` is unique before inserting `tool_details` or `tool_versions`.
-- [ ] Deleting a category with projects respects the `RESTRICT` rule.
+- [ ] Project category references are valid (the schema intentionally avoids database foreign keys for shared-host compatibility).
 - [ ] `nav_menu.parent_id` is null for the current flat menus.
 - [ ] `ml_translations` has the unique key before bulk-importing translations.
 - [ ] Plugin tables are backed up before deactivation or uninstallation.

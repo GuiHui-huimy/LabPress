@@ -169,7 +169,7 @@ The permission checks are performed in the admin views and API endpoints using t
 
 User accounts control access to the entire admin panel. Follow these recommendations to keep the site secure:
 
-- Change the default `root` password immediately after installation.
+- Set a strong administrator password during installation; no default credentials are shipped.
 - Use strong, unique passwords for all administrator accounts.
 - Grant the `all` permission only to trusted administrators.
 - Create limited accounts for staff members who only need to manage one module, such as publications or slides.
@@ -182,7 +182,7 @@ The user management system uses PHP’s `password_hash()` and `password_verify()
 ## 10. Operational Checks
 
 - [ ] At least one `all` account exists and its password is stored outside the repository.
-- [ ] The default `root` password has been changed.
+- [ ] The administrator and database credentials are unique and not defaults.
 - [ ] A limited editor can log in but cannot open unrelated modules.
 - [ ] The public account dropdown hides modules the user cannot access.
 - [ ] Deleting an account does not remove the last administrator.

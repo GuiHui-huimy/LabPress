@@ -1,338 +1,214 @@
 # Installation Guide
 
-This guide walks through a first-time LabPress 1.2.0 installation on a typical PHP/MySQL host. It covers environment checks, source acquisition, database creation, sample-data import, `storage/config/site.php`, directory permissions, first login, and post-install verification.
+This guide covers a fresh LabPress 1.2.0 installation with the browser installer. The installer creates the database schema, administrator account, deployment configuration and optional demo content; you no longer import a SQL dump.
 
-If you are upgrading an existing 1.1.0 site rather than installing from scratch, use the [1.1.1 upgrade notes](../changelog.md#upgrade-notes) instead of re-importing the sample database.
+If you are upgrading an existing LabPress site, read the [v1.2.0 upgrade guide](upgrade-v1.2.0.md) instead. Do not run the installer against a database that already contains production content.
 
-## 1. Before You Begin
-
-### 1.1 Deployment model
-
-LabPress is a flat-file PHP application. There is no installer wizard and no writable `install/` directory. A deployment consists of:
-
-1. the project files in the web root (or a subdirectory);
-2. a MySQL database imported from `labpressexample.sql`;
-3. one deployment-owned `storage/config/site.php`;
-4. writable `uploads/` and `plugins/` directories.
-
-The browser-facing entry points are `/index.php` and `/admin/index.php`. The default URL layout assumes the project is installed at the domain root. A subdirectory install works, but relative asset and upload paths should be checked after deployment.
-
-```mermaid
-flowchart TD
-    A[Prepare PHP + MySQL] --> B[Download or clone LabPress]
-    B --> C[Create empty database]
-    C --> D[Import labpressexample.sql]
-    D --> E[Edit storage/config/site.php]
-    E --> F[Set uploads/plugins permissions]
-    F --> G[Open the public homepage]
-    G --> H[Log in to /admin]
-    H --> I[Change the default password]
-    I --> J[Configure site identity and menus]
-    J --> K[Install or activate plugins]
-```
-
-### 1.2 Requirements
+## 1. Requirements
 
 | Component | Minimum | Recommended | Notes |
 | --- | --- | --- | --- |
-| Web server | Apache 2.4 / Nginx 1.18 | Current stable | URL rewriting is optional; flat PHP routes work without it. |
-| PHP | 7.4 | 8.1 or 8.2 | PDO MySQL is required. |
-| Database | MySQL 5.7 / MariaDB 10.3 | MySQL 8.0 | `utf8mb4` is required for content. |
-| Disk | Enough for code + uploads | Backups on separate storage | Slides and project images can grow quickly. |
-| HTTPS | Recommended | Required for production | Protects admin sessions and login credentials. |
+| Web server | Apache 2.4 / Nginx 1.18 | Current stable | URL rewriting is optional. |
+| PHP | 8.1 | 8.1 or 8.2 | CLI and web SAPI both need the same extensions. |
+| Database | MySQL 5.7 / MariaDB 10.3 | MySQL 8.0 / MariaDB 10.6 | `utf8mb4` is required. |
+| Disk | Code + uploads | Backups on separate storage | Images and plugin archives grow over time. |
+| HTTPS | Recommended | Required for production | Protects login credentials and sessions. |
 
 Required PHP extensions:
 
-| Extension | Why it is needed |
+| Extension | Purpose |
 | --- | --- |
-| `pdo` | Database abstraction. |
-| `pdo_mysql` | MySQL driver used by the bootstrap PDO connection. |
-| `json` | API payloads, permissions, and plugin metadata. |
-| `mbstring` | Multibyte strings in content and UI helpers. |
-| `session` | Admin login and permission state. |
-| `fileinfo` | Upload MIME detection. |
-| `zip` | Installing plugins from a ZIP archive. |
+| `pdo` + `pdo_mysql` | Database connection and schema creation. |
+| `json` | Site configuration, permissions and plugin metadata. |
+| `mbstring` | Multibyte strings in content and installer validation. |
+| `session` | Installer CSRF token and admin login state. |
+| `zip` | Installing plugins from a ZIP archive (recommended). |
 
-`openssl` is recommended for HTTPS-aware deployments but is not required by the core request path. If `zip` is unavailable, manual plugin upload still works but the ZIP installer page will report a failed environment check.
+`fileinfo` is recommended for uploads. If `zip` is missing, the installer still works; only the plugin ZIP installer is unavailable.
 
-To inspect the active PHP configuration, create a temporary `phpinfo.php` in the web root:
+## 2. Upload the Code
 
-```php
-<?php
-phpinfo();
-```
-
-Open it in a browser, confirm `pdo_mysql` is enabled, then **delete the file immediately**. Do not leave `phpinfo.php` on a production server.
-
-## 2. Obtaining the Source Code
-
-Choose one method. Both produce the same application tree; the ZIP is easier for a server without Git.
-
-### 2.1 Clone the repository
-
-```bash
-git clone https://github.com/GuiHui-huimy/LabPress.git
-cd LabPress
-```
-
-Upload or move the project into the web root. If the web root is `/www/wwwroot/LabPress`, the repository root should be that directory, not a nested `LabPress/LabPress` directory.
-
-### 2.2 Download the ZIP archive
-
-Download the latest release from [GitHub Releases](https://github.com/GuiHui-huimy/LabPress/releases), extract it locally, and upload the extracted contents. Do not upload the outer folder if your panel already creates the site directory.
-
-### 2.3 Verify the directory
-
-A healthy source tree contains at least:
+Place the LabPress files in the web root, or in a subdirectory. The examples below assume the domain root:
 
 ```text
-LabPress/
-├── admin/                  # admin entry + views
-├── api/                    # JSON endpoints
-├── assets/                 # frontend CSS/JS/fonts
-├── docs/                   # MkDocs source
-├── includes/               # config, helpers, hooks, header/footer
-├── languages/              # core language packs
-├── plugins/                # plugin directories
-├── uploads/                # runtime uploads
-├── index.php
-├── publications.php
-├── tools.php
-├── projects.php
-├── news.php
-├── labpressexample.sql
-└── README.md
+https://example.com/install.php
 ```
 
-`storage/config/site.php` is absent in a fresh clone because it holds deployment credentials. Copy `storage/config/site.example.php` to `storage/config/site.php` before editing.
+The web server must be able to write to:
 
-## 3. Database Setup and Sample Data
+```text
+storage/
+uploads/
+plugins/
+```
 
-The SQL dump creates tables and inserts demo content. It does **not** create a database. Create an empty database first, then import.
+On Linux/macOS:
 
-The sample dump was exported from MySQL 8.0 and may contain `utf8mb4_0900_ai_ci`. MySQL 5.7 does not understand that collation; replace it with `utf8mb4_general_ci` before importing, or import into MySQL 8.0 and convert afterwards.
+```bash
+chmod -R 755 uploads/ plugins/
+chmod -R 775 storage/
+```
 
-### 3.1 Method A: phpMyAdmin / BaoTa panel
+## 3. Create an Empty Database
 
-This is the recommended path for shared hosting and panel-managed servers.
-
-1. Open the hosting panel and choose **Database**.
-2. Create a database, for example `labpress`.
-3. Set the character set to `utf8mb4` and the collation to `utf8mb4_general_ci`.
-4. Create a database user with full privileges on that database, or reuse an existing user.
-5. Record the host, database name, username, and password.
-6. Open phpMyAdmin, select the new database, and choose **Import**.
-7. Choose `labpressexample.sql`, keep the format as SQL, and run the import.
-8. Confirm that tables such as `publications`, `projects`, `news`, `tools`, and `users` exist.
-
-![Create a database in the hosting panel](../assets/contentImag/Gettingstart/2_1.png)
-> The database creation screen. Use `utf8mb4` and a dedicated database user.
-
-![Create the database user and privileges](../assets/contentImag/Gettingstart/2_2.png)
-> Give the user full privileges on the LabPress database only.
-
-![Open phpMyAdmin and select the database](../assets/contentImag/Gettingstart/2_3.png)
-> Select the empty database before importing the SQL dump.
-
-![Choose the SQL file](../assets/contentImag/Gettingstart/2_4.png)
-> The import form. Keep the SQL format and do not change the character set unless your panel requires it.
-
-![Confirm a successful import](../assets/contentImag/Gettingstart/2_5.png)
-> A successful import lists the LabPress tables and the demo records.
-
-### 3.2 Method B: MySQL command line
-
-Use this when you have shell access and prefer reproducible commands.
+Create a MySQL/MariaDB database with `utf8mb4`:
 
 ```sql
 CREATE DATABASE labpress
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_general_ci;
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+```
 
-CREATE USER 'labpress_user'@'localhost'
-    IDENTIFIED BY 'replace-with-a-strong-password';
+Create a dedicated database user and grant it access:
 
+```sql
+CREATE USER 'labpress_user'@'localhost' IDENTIFIED BY 'replace-with-a-strong-password';
 GRANT ALL PRIVILEGES ON labpress.* TO 'labpress_user'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
-Then import from the project root:
+The installer can create the database automatically when the user has the `CREATE DATABASE` privilege. On shared hosting, create the database in the control panel first and leave the installer to create only the tables.
 
-```bash
-mysql -u labpress_user -p labpress < labpressexample.sql
-```
+> Use an empty database. The installer uses `CREATE TABLE IF NOT EXISTS` and will not delete existing tables, but mixing old dumps with a new install is not supported.
 
-Verify the result:
+## 4. Run the Browser Installer
 
-```bash
-mysql -u labpress_user -p labpress -e "SHOW TABLES;"
-```
-
-If the command returns no error but the site is empty, confirm that the dump was imported into the same database named in `DB_NAME`.
-
-## 4. Configure the Environment
-
-`storage/config/site.php` is the v1.2.0 recommended deployment file. It contains database credentials, timezone, session cookie settings, and debug flags. It is ignored by Git and protected by `storage/.htaccess` on Apache.
-
-### 4.1 Create the file
-
-From the project root:
-
-```bash
-cp storage/config/site.example.php storage/config/site.php
-```
-
-If you upgraded from v1.1.1 and already have working `DB_*` constants in `includes/config.php`, you can keep them temporarily; bootstrap uses them as a fallback. For new deployments, use `storage/config/site.php`.
-
-### 4.2 Set the database connection
-
-```php
-<?php
-// storage/config/site.php
-return [
-    'db' => [
-        'host' => 'localhost',
-        'name' => 'labpress',
-        'user' => 'labpress_user',
-        'pass' => 'replace-with-a-strong-password',
-        'charset' => 'utf8mb4',
-    ],
-    'timezone' => 'Asia/Shanghai',
-    'debug' => false,
-    'session' => [
-        'name' => '',
-        'same_site' => 'Lax',
-        'secure' => null,
-    ],
-];
-```
-
-`includes/bootstrap.php` is the only place that starts the session and creates the PDO connection. `includes/config.php` is retained only as a compatibility shim for old deployments that still define `DB_*` constants.
-
-### 4.3 Run the migration
-
-```bash
-php bin/migrate.php status
-php bin/migrate.php up
-```
-
-The first run creates `schema_version`. If the database was imported from the v1.1.1 sample dump, the migration is additive; it does not drop user content.
-
-### 4.4 Security rules
-
-- Never commit real credentials. `storage/config/site.php` is already ignored.
-- Do not include `storage/` in a public release ZIP.
-- Keep `storage/logs/` writable by PHP but not web-accessible.
-- For Nginx deployments, add a `location ^~ /storage/ { deny all; }` rule manually.
-
-## 5. Directory Permissions
-
-The PHP process must be able to write uploaded images and plugin packages. Read access is required for the rest of the tree.
-
-```bash
-chmod -R 755 uploads/
-chmod -R 755 plugins/
-mkdir -p storage/logs
-chmod -R 775 storage/logs
-```
-
-If the web server runs as a dedicated user, set ownership explicitly:
-
-```bash
-chown -R www-data:www-data uploads plugins storage/logs
-```
-
-On a BaoTa-style panel, the site user may be `www`; use the actual PHP-FPM user. Avoid `777` on production. If uploads fail, check:
-
-1. the directory owner versus the PHP-FPM user;
-2. SELinux/AppArmor restrictions;
-3. the panel's “open_basedir” setting;
-4. PHP upload limits (`upload_max_filesize`, `post_max_size`).
-
-## 6. First Access and Login
-
-Open the public site:
+Open:
 
 ```text
-https://your-domain/
+https://example.com/install.php
 ```
 
-You should see the demo homepage with slides, projects, publications, tools, and news. If the page is blank or reports `Database Connect Error`, fix `storage/config/site.php` (or the legacy `DB_*` constants) before continuing.
+The first screen runs environment checks. Required checks must pass before the form can be submitted. Fill in:
 
-The administration panel is at:
+### Database
 
-```text
-https://your-domain/admin/
-```
+| Field | Example | Notes |
+| --- | --- | --- |
+| Host | `127.0.0.1` | Use `localhost` for a local socket. |
+| Port | `3306` | Ignored when a Unix socket is supplied. |
+| Unix Socket | `/var/run/mysqld/mysqld.sock` | Optional; takes precedence over host/port. |
+| Database name | `labpress` | Letters, digits and underscores only. |
+| Database user | `labpress_user` | Needs create/alter/index privileges on the database. |
+| Database password | — | Empty password is allowed but not recommended. |
 
-The sample database creates one administrator:
+### Site and administrator
 
-| Field | Value |
+| Field | Notes |
 | --- | --- |
-| Username | `root` |
-| Password | `lab123456` |
+| Site name | Written to `site_config.site_name`; can be changed later. |
+| Site URL | Full `http://` or `https://` URL, without a trailing slash. |
+| Site language | `zh_CN` or `en_US`; controls the initial content locale. |
+| Admin username | 3–32 characters: letters, digits, `_`, `.`, `@`, `-`. |
+| Admin password | At least 8 characters; stored with `password_hash()`. |
 
-![v1.1.1 login page](../assets/contentImag/Gettingstart/v111-login-zh.png)
-> The login page after installation. The **中文 / English** control appears below the form when Dynamic Multi-Language is active.
+### Demo content
 
-![v1.1.1 administrator dashboard](../assets/contentImag/Gettingstart/v111-dashboard-zh.png)
-> The dashboard is the first screen after login. This v1.1.1 capture also shows the admin language switcher in the topbar. Change the default password before editing content.
+The checkbox installs a newly written “computational biology lab” demo: 6 projects, 4 sample publications, 3 news posts, 3 tools, project categories, navigation, homepage sections and footer text. Demo content is not the old `labpressexample.sql` dump. Leave it unchecked for a blank site with only the administrator and base configuration.
 
-**Change the password immediately.** Open **Users → Change My Password**, set a strong password, and confirm that `isUsingDefaultPassword()` no longer shows a warning. For a production site, create a separate administrator and stop using `root` for day-to-day work.
+After a successful install the page shows the administrator, database, schema version and site URL. The installer writes:
 
-### 6.1 Post-install checklist
+```text
+storage/config/site.php   # database credentials and runtime settings
+storage/install.lock      # installation marker and schema version
+```
 
-- [ ] The public homepage loads without PHP warnings.
-- [ ] `/admin/login.php` loads and accepts the sample login.
-- [ ] The default password has been changed.
-- [ ] `uploads/` and `plugins/` are writable by PHP.
-- [ ] `storage/config/site.php` and `storage/logs/` are not web-accessible.
-- [ ] HTTPS is enabled and the admin cookie is sent over HTTPS.
-- [ ] The site name, title, and footer are correct under **Settings → Site Config**.
-- [ ] The navigation menu points to the intended pages.
-- [ ] Dynamic Multi-Language is active only if the site actually needs database-content translation.
-- [ ] A database backup has been taken after configuration.
+`storage/config/site.php` is ignored by Git and should be readable only by the web server user.
 
-## 7. Security Recommendations
+## 5. CLI Installation
 
-- Use HTTPS for both frontend and admin. A valid certificate is not optional for a site with logins.
-- Change the sample `root` password before exposing the site to the internet.
-- Keep `storage/config/site.php` outside version control and outside public backups where possible.
-- Restrict `includes/`, `docs/`, and `labpressexample.sql` at the web-server level. None of them need to be publicly downloadable.
-- Back up the database and `uploads/` together; restoring only the database leaves broken image references.
-- Keep PHP and MySQL patched. The application has no autoloader or third-party framework to update, but the runtime still needs maintenance.
-- Install plugins only from sources you trust. A plugin is PHP code with the same filesystem privileges as the site.
+The same installer is available from the command line for CI and automated deployments:
+
+```bash
+php bin/install.php \
+  --db-host=127.0.0.1 \
+  --db-port=3306 \
+  --db-name=labpress \
+  --db-user=labpress_user \
+  --db-pass='replace-with-a-strong-password' \
+  --site-url=https://example.com \
+  --site-name='Example Lab' \
+  --admin-username=admin \
+  --admin-password='replace-with-a-strong-password' \
+  --demo
+```
+
+Use `--no-demo` for a blank site. Values can also be supplied through `LABPRESS_DB_HOST`, `LABPRESS_DB_PORT`, `LABPRESS_DB_SOCKET`, `LABPRESS_DB_NAME`, `LABPRESS_DB_USER`, `LABPRESS_DB_PASS`, `LABPRESS_SITE_URL`, `LABPRESS_SITE_NAME`, `LABPRESS_ADMIN_USER` and `LABPRESS_ADMIN_PASS`.
+
+The CLI installer exits non-zero and prints the failing stage when validation, connection, schema, seed, config or lock writing fails.
+
+## 6. First Login
+
+Open:
+
+```text
+https://example.com/admin/login.php
+```
+
+Use the administrator account created in the installer. There is no built-in default password.
+
+Recommended first steps:
+
+1. Change the administrator password if you used a temporary one.
+2. Review **Settings → Site Configuration** and navigation menus.
+3. Replace demo text and images, or delete demo content you do not need.
+4. Enable only the plugins you actually use.
+5. Configure HTTPS and restrict access to `storage/`, `includes/` and `docs/`.
+
+## 7. Post-Install Security
+
+1. **Remove or block `install.php`.** The install lock prevents a second run, but production sites should not expose the installer. For Nginx:
+
+   ```nginx
+   location = /install.php { return 404; }
+   ```
+
+   For Apache, add a rule in `.htaccess` or delete `install.php` after installation.
+
+2. **Protect deployment config.** Confirm `storage/config/site.php` is not readable from the browser. LabPress ships `storage/.htaccess` and `storage/config/.htaccess`; Nginx users need an equivalent deny rule.
+
+3. **Use a dedicated database user.** Grant privileges only on the LabPress database, not global `ALL PRIVILEGES`.
+
+4. **Keep `storage/install.lock`.** Removing it allows the installer to run again; only remove it after backing up and intentionally resetting the site.
+
+5. **Back up the database and `storage/config/site.php`.** They are the two pieces needed to restore a deployment.
 
 ## 8. Troubleshooting
 
-### The page is blank or reports a database error
+### “数据库用户名或密码不正确”
 
-Check `storage/config/site.php` first. Confirm the `db` host/name/user/pass values; then confirm `pdo_mysql` is enabled. Temporarily enable PHP error display only in a local environment, never on a public production site.
+Check the host, port, database name, user and password. For a local socket, verify the socket path exists and the PHP process can access it.
 
-### SQL import fails with a collation error
+### “数据库不存在，且当前用户没有创建数据库的权限”
 
-Replace `utf8mb4_0900_ai_ci` with `utf8mb4_general_ci` in the dump, or import into MySQL 8.0. Do not mix collations across tables that join each other.
+Create the empty database in the hosting panel, then run the installer with the same database name. The installer will connect to the existing database and create tables.
 
-### Images do not load
+### “storage/config 不可写”
 
-Confirm that `uploads/` and `images/` exist, contain the referenced files, and are readable by the web server. If the site is installed in a subdirectory, check that the database paths and the public URL prefix agree.
+Give the web server user write access to `storage/` and `storage/config/`:
 
-### Plugin ZIP installation fails
+```bash
+chmod -R 775 storage
+```
 
-Confirm that the `zip` PHP extension is enabled and that `plugins/` is writable. The installer also checks the archive structure; a ZIP that contains an extra wrapper directory may need to be repacked with `plugin.php` at the archive root.
+### Installer says “尚未安装” fails
 
-### The language switch does not change the admin panel
+If `storage/install.lock` exists, the installer intentionally refuses to run. Restore a backup or remove the lock only when you intend to reinstall against an empty database.
 
-Use `/admin/login.php?lang=zh_CN` as a direct test. If the HTML still reports `lang="en-US"`, check the `loadPlugins()` / `getLocale()` order in `includes/functions.php` and clear OPcache. See [Core Language Packs](../i18n/core-lang.md) for the exact resolution order.
+### Table creation fails with a collation error
 
-### `git pull` refuses because local files changed
+Use `utf8mb4` and `utf8mb4_unicode_ci`. LabPress no longer ships a MySQL 8-specific dump with `utf8mb4_0900_ai_ci`, so the installer is compatible with MariaDB 10.3+.
 
-Do not discard `storage/config/site.php`. Inspect the changed files, stash only the disposable edits, pull, then restore the stash. Never use `git reset --hard` on a server where the config contains production credentials.
+### HTTP 500 after installation
 
-## 9. Next Steps
+Check `storage/logs/app-*.log`. The most common causes are an incorrect `storage/config/site.php`, missing `pdo_mysql`, or a PHP version below 8.1.
 
-- First-run configuration: [Quick Start](quick-start.md).
-- Site identity and homepage settings: [Site Settings](../setup/site-settings.md).
-- Navigation and account entry: [Navigation Menus](../setup/navigation.md).
-- Upgrade an existing site: [Changelog → Upgrade Notes](../changelog.md#upgrade-notes).
-- Production hardening: [Security](../security.md).
+## 9. Verification Checklist
+
+- [ ] `/install.php` shows the success page once, then “已安装” on later visits.
+- [ ] `storage/config/site.php` and `storage/install.lock` exist.
+- [ ] `php bin/migrate.php status` shows all migrations as `applied`.
+- [ ] `/` returns HTTP 200 and the selected demo content is visible.
+- [ ] `/admin/login.php` accepts the installer-created administrator.
+- [ ] The dashboard shows the v1.2.0 ECharts overview (content mix, project categories, 14-day trend).
+- [ ] `storage/logs/` is writable by the web server user.

@@ -6,6 +6,8 @@ on:
     paths:
       - 'core/**'
       - 'includes/**'
+      - 'install/**'
+      - 'install.php'
       - 'migrations/**'
       - 'bin/**'
       - 'tests/**'
@@ -15,6 +17,8 @@ on:
     paths:
       - 'core/**'
       - 'includes/**'
+      - 'install/**'
+      - 'install.php'
       - 'migrations/**'
       - 'bin/**'
       - 'tests/**'
@@ -47,33 +51,26 @@ jobs:
           extensions: mbstring, pdo_mysql, zip, curl
           coverage: none
 
-      - name: Configure site
+      - name: Install LabPress into an empty database
         run: |
-          cat > storage/config/site.php <<'PHP'
-          <?php
-          return [
-              'db' => [
-                  'host' => '127.0.0.1',
-                  'name' => 'labpress_test',
-                  'user' => 'labpress',
-                  'pass' => 'labpress_test_pw',
-                  'charset' => 'utf8mb4',
-              ],
-              'timezone' => 'Asia/Shanghai',
-              'debug' => true,
-              'session' => ['name' => '', 'same_site' => 'Lax', 'secure' => null],
-          ];
-          PHP
-
-      - name: Import example database (MariaDB collation compatibility)
-        run: |
-          sed 's/utf8mb4_0900_ai_ci/utf8mb4_unicode_ci/g' labpressexample.sql > /tmp/labpress.sql
-          mysql -h 127.0.0.1 -uroot -proot labpress_test < /tmp/labpress.sql
+          php bin/install.php \
+            --db-host=127.0.0.1 \
+            --db-port=3306 \
+            --db-name=labpress_test \
+            --db-user=root \
+            --db-pass=root \
+            --site-url=http://127.0.0.1:8090 \
+            --site-name='LabPress CI' \
+            --admin-username=admin \
+            --admin-password='ci_admin_password' \
+            --demo
 
       - name: PHP syntax
         run: |
-          find core includes migrations bin tests plugins -name '*.php' -print0 \
+          find core includes install migrations bin tests plugins -name '*.php' -print0 \
             | xargs -0 -n1 php -l
+          php -l install.php
+          php -l admin/views/dashboard.php
 
       - name: Migrations
         run: |
@@ -90,5 +87,9 @@ jobs:
           sleep 2
           curl -fsS -o /tmp/index.html -w 'index=%{http_code} size=%{size_download}\n' http://127.0.0.1:8090/index.php
           curl -fsS -o /tmp/login.html -w 'login=%{http_code} size=%{size_download}\n' http://127.0.0.1:8090/admin/login.php
+          curl -fsS -o /tmp/install.html -w 'install=%{http_code} size=%{size_download}\n' http://127.0.0.1:8090/install.php
+          curl -fsS -o /dev/null -w 'echarts=%{http_code} size=%{size_download}\n' http://127.0.0.1:8090/admin/assets/js/echarts.min.js
           test -s /tmp/index.html
           test -s /tmp/login.html
+          test -s /tmp/install.html
+          grep -q '已安装' /tmp/install.html

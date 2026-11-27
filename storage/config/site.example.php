@@ -8,6 +8,9 @@
 return [
     'db' => [
         'host' => 'localhost',
+        'port' => 3306,
+        // 可选：本地 MySQL/MariaDB 的 Unix Socket，填写后优先于 host/port。
+        'socket' => '',
         'name' => 'labpress',
         'user' => 'labpress',
         'pass' => 'change-me',

@@ -1,6 +1,6 @@
 # v1.2.0 Upgrade and Rollback
 
-This page is the operator checklist for the kernel release. It is intentionally short: deploy, migrate, verify, and know how to go back.
+This page is the operator checklist for the kernel and installation release. It is intentionally short: deploy, migrate, verify, and know how to go back. Do **not** open `install.php` on an existing site; the installer is only for empty databases. Use `php bin/migrate.php up` for upgrades.
 
 ## 1. Before Deploying
 

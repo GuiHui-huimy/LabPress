@@ -24,6 +24,24 @@ $statCards = [
 ];
 $statCards = LabPress_Hooks::applyFilters('admin_dashboard_cards', $statCards);
 $siteName = LabPress::config('site_name', 'HUI-MY.LAB');
+
+// 图表数据：内容构成 + 项目分类 + 最近 14 天新增趋势
+$chartData = getDashboardChartData();
+$chartData['content'] = [
+    ['name' => __('stat_publications', 'admin'), 'value' => (int)$counts['publications']],
+    ['name' => __('stat_projects', 'admin'), 'value' => (int)$counts['projects']],
+    ['name' => __('stat_tools', 'admin'), 'value' => (int)$counts['tools']],
+    ['name' => __('stat_news', 'admin'), 'value' => (int)$counts['news']],
+    ['name' => __('stat_slides', 'admin'), 'value' => (int)$counts['slides']],
+    ['name' => __('stat_users', 'admin'), 'value' => (int)$counts['users']],
+];
+$chartData['labels'] = [
+    'empty' => __('chart_empty', 'admin'),
+    'news' => __('chart_news', 'admin'),
+    'projects' => __('chart_projects', 'admin'),
+    'users' => __('chart_users', 'admin'),
+];
+$chartData = LabPress_Hooks::applyFilters('admin_dashboard_chart_data', $chartData);
 ?>
 
 <section class="hero">
@@ -64,3 +82,34 @@ $siteName = LabPress::config('site_name', 'HUI-MY.LAB');
 </div>
 
 <?php LabPress_Hooks::doAction('admin_after_dashboard_stats'); ?>
+
+<section class="section-head chart-section-head">
+    <h3><?= e(__('dashboard_charts', 'admin')) ?></h3>
+    <span class="text-muted"><?= e(__('dashboard_charts_note', 'admin')) ?></span>
+</section>
+
+<div class="dashboard-charts">
+    <article class="chart-card">
+        <div class="chart-card-head">
+            <h4><?= e(__('chart_content', 'admin')) ?></h4>
+            <span><?= e(__('chart_content_note', 'admin')) ?></span>
+        </div>
+        <div id="lpChartContent" class="chart-canvas" role="img" aria-label="<?= e(__('chart_content', 'admin')) ?>"></div>
+    </article>
+    <article class="chart-card">
+        <div class="chart-card-head">
+            <h4><?= e(__('chart_categories', 'admin')) ?></h4>
+            <span><?= e(__('chart_categories_note', 'admin')) ?></span>
+        </div>
+        <div id="lpChartCategories" class="chart-canvas" role="img" aria-label="<?= e(__('chart_categories', 'admin')) ?>"></div>
+    </article>
+    <article class="chart-card chart-card-wide">
+        <div class="chart-card-head">
+            <h4><?= e(__('chart_trend', 'admin')) ?></h4>
+            <span><?= e(__('chart_trend_note', 'admin')) ?></span>
+        </div>
+        <div id="lpChartTrend" class="chart-canvas chart-canvas-tall" role="img" aria-label="<?= e(__('chart_trend', 'admin')) ?>"></div>
+    </article>
+</div>
+
+<script type="application/json" id="lpDashboardChartData"><?= json_encode($chartData, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>

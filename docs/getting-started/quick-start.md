@@ -1,12 +1,12 @@
 # Quick Start
 
-This guide is for a LabPress that is already installed, whose database has been imported, and whose `includes/config.php` connects successfully. It covers the minimum sequence needed to turn the sample site into a usable deployment.
+This guide is for a LabPress that has already been installed by `install.php` or `bin/install.php`, with `storage/config/site.php` and `storage/install.lock` in place. It covers the minimum sequence needed to turn the installed site into a usable deployment.
 
 Detailed module behavior lives in the chapter pages; this page focuses on order, verification, and the first-run decisions that are easy to postpone.
 
 ```mermaid
 flowchart TD
-    A[Log in at /admin] --> B[Change the default password]
+    A[Log in at /admin/login.php] --> B[Review the installer-created administrator]
     B --> C[Review site identity and homepage settings]
     C --> D[Review navigation labels and URLs]
     D --> E[Activate only the plugins you need]
@@ -21,34 +21,26 @@ flowchart TD
 Open:
 
 ```text
-https://your-domain/admin/
+https://your-domain/admin/login.php
 ```
 
-Use the sample administrator:
+Use the administrator account created in the installer. There is no built-in default username or password.
 
-| Field | Value |
-| --- | --- |
-| Username | `root` |
-| Password | `lab123456` |
-
-After login, the dashboard shows the current content counts. A fresh sample database is not an empty site; it contains demo publications, slides, tools, projects, news, and users.
+After login, the dashboard shows content counts plus the v1.2.0 ECharts overview: content mix, project categories, and the 14-day new-content trend. If you installed demo data, the site already contains six projects, four sample publications, three news posts and three tools; a blank install starts with only the administrator and base settings.
 
 ![v1.1.1 administrator dashboard](../assets/contentImag/Gettingstart/v111-dashboard-zh.png)
-> The dashboard after the first login. Content counts are read from the live database; the topbar shows the v1.1.1 admin language switcher and account chip.
+> The dashboard after the first login. v1.2.0 adds the data-overview charts below the existing content cards.
 
-![v1.1.1 login page with the admin language switcher](../assets/contentImag/Gettingstart/v111-login-zh.png)
-> The login page in v1.1.1. The **中文 / English** control below the form belongs to Dynamic Multi-Language; it changes the admin interface, not the public site.
+## 2. Secure the Installer Administrator
 
-## 2. Secure the Default Administrator
-
-The sample password is public. Change it before doing anything else:
+The installer account is the first administrator. If you used a temporary password, change it before doing anything else:
 
 1. Open **Users** in the admin sidebar.
 2. Use **Change My Password**.
 3. Enter a strong password and confirm it.
-4. Reload the page and confirm the default-password warning is gone.
+4. Reload the page and confirm the installed account still has the permissions you expect.
 
-For a production site, create a separate administrator account and stop using `root` for daily editing. The `root` account can remain as a break-glass account, but its password must be unique.
+For a production site, create a separate administrator account for daily editing. Keep the installer account as a break-glass account with a unique password.
 
 ![LabPress user management](../assets/contentImag/Gettingstart/3_2.png)
 > User management contains the self-service password form and the administrator password reset form.

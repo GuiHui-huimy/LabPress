@@ -373,6 +373,19 @@ return [
     'plugin_uninstall_success' => 'Uninstalled successfully',
     'plugin_uninstall_fail' => 'Uninstall failed',
     'network_error' => 'Network error',
+    // Dashboard charts (v1.2.0)
+    'dashboard_charts' => 'Data overview',
+    'dashboard_charts_note' => 'Last 14 days',
+    'chart_content' => 'Content mix',
+    'chart_content_note' => 'Publications, projects, tools, news, slides and users',
+    'chart_categories' => 'Project categories',
+    'chart_categories_note' => 'Projects in each category',
+    'chart_trend' => 'New content trend',
+    'chart_trend_note' => 'News, projects and users over the last 14 days',
+    'chart_news' => 'News',
+    'chart_projects' => 'Projects',
+    'chart_users' => 'Users',
+    'chart_empty' => 'No data yet',
     // 侧边栏
     'admin_panel' => 'Admin Panel',
 ];

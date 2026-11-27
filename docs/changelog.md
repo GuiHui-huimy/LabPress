@@ -4,38 +4,46 @@ All notable changes to LabPress are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Versions are ordered from newest to oldest.
 
-## [1.2.0] - 2026-11-26
+## [1.2.0] - 2026-11-27
 
-LabPress 1.2.0 is the kernel release. It does not add a marketplace UI; it hardens the bootstrap, database migrations, plugin lifecycle, admin routing, permissions, errors, and asset loading that later releases depend on.
+LabPress 1.2.0 is the kernel and installation release. It hardens the bootstrap, database migrations, plugin lifecycle, admin routing, permissions, errors, and asset loading, replaces the SQL-dump install path with a browser/CLI installer, and adds a dashboard data overview. It does not add a marketplace UI.
 
 ### Added
 
 - `includes/bootstrap.php` as the single entry for autoload, application config, session, PDO, timezone, error handling, and asset hooks.
 - `storage/config/site.php` (ignored by Git and protected by `.htaccess`) plus `storage/config/site.example.php` and `storage/config/features.php`.
 - `schema_version` and `bin/migrate.php` with `status`, `up`, and `down` commands. Three initial migrations add plugin metadata columns, extend the multilingual translation contract, and archive the unused `categories` table.
+- Browser installer at `install.php` with preflight checks, CSRF protection, attempt throttling, database creation when permitted, schema creation, migrations, administrator creation, optional demo seeding, `storage/config/site.php` generation and `storage/install.lock`.
+- `install/Schema.php` as the fresh-install base schema; `install/DemoData.php` with a newly written computational-biology demo site (projects, publications, news, tools, navigation and homepage sections).
+- `bin/install.php` CLI installer for CI and automated deployments, including `--demo` / `--no-demo` and environment-variable inputs.
+- Dashboard ECharts overview: content mix, project-category distribution and a 14-day new-content trend. ECharts is served locally from `admin/assets/js/echarts.min.js` only on the dashboard.
+- Database port and optional Unix socket support in `includes/bootstrap.php`, `storage/config/site.example.php` and the installer.
 - Hook Engine v2: `removeAction` / `removeFilter`, `hasAction` / `hasFilter`, `didAction`, `currentHook`, `collect`, `acceptedArgs`, exception isolation, and plugin-scoped lifecycle actions.
 - Plugin Manager v1: discovery, metadata refresh, priority boot, activate/deactivate/uninstall lifecycle, `Requires LabPress` compatibility, and per-plugin context filtering.
 - Admin Registry: plugins register admin pages through `LabPress::registerAdminPage()`; the core checks login, permission/capability, and catches page exceptions.
 - Guard: session-level login throttling, CSRF verification, same-origin checks for write requests, audit logging, and unified login/logout events.
 - Logger, ErrorCode, and JSON `Response` envelope with `request_id`; API exceptions now go to `storage/logs/app-*.log` instead of leaking SQL/path detail.
 - Asset registry: `LabPress::enqueueStyle()` / `enqueueScript()` with URL de-duplication and dependency ordering.
-- `tests/smoke.php` and a GitHub Actions workflow covering syntax, migrations, smoke checks, and HTTP availability.
+- `tests/smoke.php` and a GitHub Actions workflow covering syntax, installation, migrations, smoke checks, and HTTP availability.
 - `site_config` key whitelist via `LabPress\SiteConfig`; unknown keys are rejected instead of being written blindly.
 
 ### Changed
 
+- Fresh installations no longer import `labpressexample.sql`. The SQL dump and the old `sql/upgrade-v1.1.1.sql` file were removed; `install/Schema.php` plus `migrations/` are the single source of truth.
 - `includes/config.php` no longer starts a session or creates a PDO connection. It only defines `DB_*` fallbacks and requires the bootstrap.
 - `includes/functions.php` now delegates `getActivePlugins()`, `syncPlugins()`, and `loadPlugins()` to the Plugin Manager, and `hasPermission()` / CSRF helpers to Guard.
 - `api/save.php` plugin activate/deactivate now uses the Plugin Manager lifecycle instead of raw SQL plus `require_once`.
-- `admin/index.php` renders plugin pages through the Admin Registry.
+- `admin/index.php` renders plugin pages through the Admin Registry and loads the dashboard chart bundle only on the dashboard.
 - Official plugins `FooterInfo` and `dynamic-multilang` declare `Requires LabPress: >=1.2.0`; the multilingual admin CSS now goes through the asset registry.
 - Plugin install endpoints call discovery after extraction so new plugins are registered before activation.
 
 ### Notes
 
-- This is a schema-migrating release. Run `php bin/migrate.php up` after deploying and before opening the admin panel.
-- The `categories` table is renamed to `categories_legacy`, not dropped. Verify no custom code reads it before removing it manually.
+- **New install:** open `/install.php` and use an empty database.
+- **Existing sites:** do not run the installer; deploy the files and run `php bin/migrate.php up` before opening the admin panel.
+- The `categories` table is renamed to `categories_legacy` on existing sites, not dropped. Fresh installs do not create it.
 - `storage/` must be writable by PHP and blocked from direct web access. Apache uses the included `.htaccess`; Nginx needs an explicit `location` rule.
+- Remove or block `install.php` after installation. `storage/install.lock` prevents a second run but is not a substitute for web-server access control.
 - Marketplace UI and one-click remote installation remain out of scope until v1.3.0 Manifest v2 and the v1.4.0 client work.
 
 ## [1.1.1] - 2026-11-24
@@ -181,13 +189,10 @@ flowchart TD
 
 ### Installation
 
-- Clone or download the repository.
-- Copy `includes/config-sample.php` to `includes/config.php` and set the database credentials.
-- Import `labpressexample.sql` into MySQL.
-- Grant write permissions to `uploads/` and `plugins/`.
-- Open `/` for the frontend and `/admin` for the panel.
+- Historical v1.0.0 flow: clone or download the repository, copy `includes/config-sample.php` to `includes/config.php`, import the then-shipped SQL dump, and open `/admin`.
+- v1.2.0 replaces this flow with `install.php` / `bin/install.php`; the SQL dump is no longer part of the repository.
 
 ### Important
 
-- Change the default `root` / `lab123456` credentials immediately after the first login.
+- Set a strong administrator password during installation; no default credentials are shipped.
 - LabPress is distributed under GPL-3.0.

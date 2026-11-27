@@ -15,7 +15,7 @@ define('LABPRESS_BOOTSTRAPPED', true);
 define('LABPRESS_ROOT', dirname(__DIR__));
 define('LABPRESS_STORAGE', LABPRESS_ROOT . '/storage');
 if (!defined('LABPRESS_VERSION')) {
-    define('LABPRESS_VERSION', '1.2.0-dev');
+    define('LABPRESS_VERSION', '1.2.0');
 }
 
 spl_autoload_register(static function (string $class): void {
@@ -42,6 +42,8 @@ if (is_file($siteConfigFile)) {
 // 兼容 v1.1.1：includes/config.php 里的 DB_* 常量仍然可作为回退。
 $siteConfig['db'] = array_merge([
     'host' => defined('DB_HOST') ? DB_HOST : 'localhost',
+    'port' => 3306,
+    'socket' => '',
     'name' => defined('DB_NAME') ? DB_NAME : '',
     'user' => defined('DB_USER') ? DB_USER : '',
     'pass' => defined('DB_PASS') ? DB_PASS : '',
@@ -50,6 +52,8 @@ $siteConfig['db'] = array_merge([
 
 foreach ([
     'host' => 'LABPRESS_DB_HOST',
+    'port' => 'LABPRESS_DB_PORT',
+    'socket' => 'LABPRESS_DB_SOCKET',
     'name' => 'LABPRESS_DB_NAME',
     'user' => 'LABPRESS_DB_USER',
     'pass' => 'LABPRESS_DB_PASS',
@@ -136,8 +140,14 @@ if (!function_exists('lp_bootstrap_db')) {
         if (!is_array($db) || empty($db['name'])) {
             throw new RuntimeException('Database is not configured. Create storage/config/site.php or fill includes/config.php.');
         }
-        $dsn = 'mysql:host=' . ($db['host'] ?? 'localhost')
-            . ';dbname=' . $db['name']
+        $socket = trim((string)($db['socket'] ?? ''));
+        if ($socket !== '') {
+            $dsn = 'mysql:unix_socket=' . $socket;
+        } else {
+            $dsn = 'mysql:host=' . ($db['host'] ?? 'localhost')
+                . ';port=' . (int)($db['port'] ?? 3306);
+        }
+        $dsn .= ';dbname=' . $db['name']
             . ';charset=' . ($db['charset'] ?? 'utf8mb4');
         $pdo = new PDO($dsn, (string)($db['user'] ?? ''), (string)($db['pass'] ?? ''), [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

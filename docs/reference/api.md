@@ -446,8 +446,8 @@ Request body for login:
 
 ```json
 {
-  "username": "root",
-  "password": "lab123456"
+  "username": "admin",
+  "password": "your_admin_password"
 }
 ```
 

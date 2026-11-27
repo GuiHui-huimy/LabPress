@@ -375,6 +375,19 @@ return [
     'choose_user' => '请选择用户',
     'password_mismatch' => '两次输入的密码不一致',
     'password_changed' => '密码修改成功',
+    // 仪表盘图表（v1.2.0）
+    'dashboard_charts' => '数据概览',
+    'dashboard_charts_note' => '最近 14 天',
+    'chart_content' => '内容构成',
+    'chart_content_note' => '论文、项目、工具、动态、轮播与用户',
+    'chart_categories' => '项目分类',
+    'chart_categories_note' => '各分类下的项目数量',
+    'chart_trend' => '新增趋势',
+    'chart_trend_note' => '最近 14 天动态、项目与用户变化',
+    'chart_news' => '科研动态',
+    'chart_projects' => '项目',
+    'chart_users' => '用户',
+    'chart_empty' => '暂无数据',
     // 侧边栏
     'admin_panel' => '管理后台',
 ];

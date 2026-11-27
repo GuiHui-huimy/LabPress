@@ -74,7 +74,7 @@ Hand-written PHP, no framework overhead. Language packs and plugins are loaded o
 
 | Dependency     | Version              | Notes                                                  |
 | -------------- | -------------------- | ------------------------------------------------------ |
-| **PHP**        | 7.4 or higher        | Requires PDO, pdo_mysql, json, mbstring, fileinfo, zip |
+| **PHP**        | 8.1 or higher        | Requires PDO, pdo_mysql, json, mbstring, session, zip  |
 | **MySQL**      | 5.7+ / MariaDB 10.3+ | Used for all content storage                           |
 | **Web Server** | Apache / Nginx       | URL rewriting recommended (optional)                   |
 
@@ -92,69 +92,68 @@ git clone https://github.com/GuiHui-huimy/LabPress.git
 
 Or download the ZIP package and extract it to your web root directory.
 
-### 2. Configure Database
+### 2. Create an Empty Database (Recommended)
 
-Copy the v1.2.0 configuration template and fill in your database connection details:
+Create a MySQL/MariaDB database with `utf8mb4`, or let the installer create it if the database user has `CREATE DATABASE` permission. An empty database is expected; do not import old SQL dumps into a fresh v1.2.0 install.
+
+### 3. Open the Installer
+
+Visit:
+
+```text
+https://your-domain/install.php
+```
+
+Fill in the database host, port, database name, user, password, site URL and administrator account. The installer will:
+
+1. check the PHP extensions and `storage/` permissions;
+2. connect to MySQL and create the database if permitted;
+3. create all v1.2.0 tables and run the bundled migrations;
+4. create the administrator and write `storage/config/site.php`;
+5. optionally install a newly written demo lab site;
+6. write `storage/install.lock` so the installer cannot run twice.
+
+After success, log in at `/admin/login.php`.
+
+### 4. CLI Installation (Optional)
+
+For CI or automated deployments:
 
 ```bash
-cp storage/config/site.example.php storage/config/site.php
+php bin/install.php \
+  --db-host=127.0.0.1 \
+  --db-name=labpress \
+  --db-user=labpress \
+  --db-pass='your-password' \
+  --site-url=https://example.com \
+  --site-name='Your Lab' \
+  --admin-username=admin \
+  --admin-password='change-me-now' \
+  --demo
 ```
 
-```php
-<?php
-// storage/config/site.php
-return [
-    'db' => [
-        'host' => 'localhost',
-        'name' => 'your_database_name',
-        'user' => 'your_database_user',
-        'pass' => 'your_database_password',
-        'charset' => 'utf8mb4',
-    ],
-    'timezone' => 'Asia/Shanghai',
-    'debug' => false,
-];
-```
+Use `--no-demo` to skip demo content.
 
-`includes/config.php` is kept only as a compatibility fallback for old deployments. New deployments should use `storage/config/site.php`.
-
-### 3. Import Database
-
-Import `labpressexample.sql` into MySQL:
-
-```bash
-mysql -u username -p database_name < labpressexample.sql
-```
-
-You can also use graphical tools such as phpMyAdmin.
-
-### 3.1 Run Migrations
-
-After importing the sample database, apply the v1.2.0 schema migrations:
-
-```bash
-php bin/migrate.php status
-php bin/migrate.php up
-```
-
-### 4. Set Permissions (Linux/macOS)
+### 5. Set Permissions (Linux/macOS)
 
 ```bash
 chmod -R 755 uploads/
 chmod -R 755 plugins/
 mkdir -p storage/logs
-chmod -R 775 storage/logs
+chmod -R 775 storage storage/logs
+chmod 640 storage/config/site.php storage/install.lock
 ```
 
-If you encounter permission issues, please check your server logs for more details , and ensure that the web server user has read/write permissions on the `uploads`, `plugins`, and `storage/logs` directories.
+The web server user needs write access to `storage/`, `uploads/`, and `plugins/`. `storage/config/site.php` contains database credentials and must not be committed.
 
-### 5. Access the Site
+### 6. Access the Site
 
 - **Frontend:** Visit your domain directly
-- **Backend:** `http://your-domain/admin`
+- **Backend:** `https://your-domain/admin/login.php`
 
-The default admin username is `root`, and the default password is `lab123456`.
-The default administrator account is included in `labpressexample.sql`. Please change the password immediately after logging in.
+The administrator account is the one you created in the installer; there is no built-in default password.
+
+> **Upgrading an existing site?** Do not run the installer. Use `php bin/migrate.php up` and follow the [v1.2.0 upgrade guide](docs/getting-started/upgrade-v1.2.0.md).
 
 ## Project Structure
 
@@ -280,14 +279,30 @@ LabPress/
 │
 ├── uploads/ # User uploaded files (images, etc.)
 │
-├── data/ # SQL / example data
-│ └── labpressexample.sql # Example database dump
+├── install/ # Browser / CLI installer
+│ ├── Installer.php # Connection, schema, config and lock flow
+│ ├── Schema.php # Fresh-install table definitions
+│ ├── DemoData.php # New v1.2.0 demo content
+│ └── views/ # Installer form, success and installed pages
+│
+├── storage/ # Deployment config, install lock and logs
+│ ├── config/
+│ │ ├── site.example.php # Configuration template
+│ │ └── site.php # Generated by installer (git-ignored)
+│ └── install.lock # Generated after a successful install
+│
+├── bin/
+│ ├── install.php # CLI installer for CI / automation
+│ └── migrate.php # Migration status / up / down
+│
+├── migrations/ # Versioned schema migrations
 │
 ├── ReadImg/ # Repository images (logo, screenshots)
 │ ├── labpress-logo.png
 │ └── screenshot-home.png
 │
 ├── index.php # Frontend homepage (dynamic content)
+├── install.php # Initial installation entry
 ├── tools.php # Tools list page
 ├── tool-detail.php # Tool detail page
 ├── projects.php # Projects list page (with category filter)
@@ -296,8 +311,6 @@ LabPress/
 ├── news-detail.php # News detail page
 ├── publications.php # Publications list page
 ├── category.php # Category filtered project list
-│
-├── labpressexample.sql # Example database dump
 │
 ├── .gitignore # Git ignore rules
 ├── LICENSE # Open-source license (GPL-3.0)

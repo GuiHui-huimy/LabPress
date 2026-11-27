@@ -396,6 +396,81 @@ function getProjectsCount($categorySlug = '') {
     return (int)$stmt->fetchColumn();
 }
 
+/**
+ * 后台首页图表数据：项目分类分布 + 最近 14 天新增趋势。
+ * 返回纯数组，视图层再补充文案，便于插件通过过滤器扩展。
+ */
+function getDashboardChartData() {
+    global $pdo;
+
+    $categories = $pdo->query(
+        "SELECT c.name, COUNT(p.id) AS total
+         FROM project_categories c
+         LEFT JOIN projects p ON p.category_slug = c.slug
+         GROUP BY c.slug, c.name, c.sort_order
+         ORDER BY c.sort_order ASC"
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    $days = [];
+    for ($i = 13; $i >= 0; $i--) {
+        $timestamp = strtotime('-' . $i . ' days');
+        $key = date('Y-m-d', $timestamp);
+        $days[$key] = [
+            'label' => date('m-d', $timestamp),
+            'news' => 0,
+            'projects' => 0,
+            'users' => 0,
+        ];
+    }
+
+    $startDate = date('Y-m-d', strtotime('-13 days'));
+    $startDateTime = $startDate . ' 00:00:00';
+
+    $newsRows = $pdo->prepare(
+        "SELECT DATE(`date`) AS day, COUNT(*) AS total
+         FROM news WHERE `date` >= ? GROUP BY DATE(`date`)"
+    );
+    $newsRows->execute([$startDate]);
+    foreach ($newsRows->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        if (isset($days[$row['day']])) {
+            $days[$row['day']]['news'] = (int)$row['total'];
+        }
+    }
+
+    foreach ([
+        'projects' => "SELECT DATE(`created_at`) AS day, COUNT(*) AS total
+                       FROM projects WHERE `created_at` >= ? GROUP BY DATE(`created_at`)",
+        'users' => "SELECT DATE(`created_at`) AS day, COUNT(*) AS total
+                    FROM users WHERE `created_at` >= ? GROUP BY DATE(`created_at`)",
+    ] as $series => $sql) {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$startDateTime]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if (isset($days[$row['day']])) {
+                $days[$row['day']][$series] = (int)$row['total'];
+            }
+        }
+    }
+
+    $trend = [
+        'labels' => array_column($days, 'label'),
+        'news' => array_column($days, 'news'),
+        'projects' => array_column($days, 'projects'),
+        'users' => array_column($days, 'users'),
+    ];
+
+    return [
+        'categories' => array_map(static function (array $row): array {
+            return [
+                'name' => (string)$row['name'],
+                'value' => (int)$row['total'],
+            ];
+        }, $categories),
+        'trend' => $trend,
+    ];
+}
+
+
 // 分页获取项目列表（可按分类过滤，按排序和创建时间排序）
 function getProjectsPaginated($page = 1, $perPage = 8, $categorySlug = '') {
     global $pdo;

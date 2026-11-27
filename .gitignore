@@ -9,11 +9,10 @@ vendor/
 *.env
 
 # -----------------------------------------------------------------------------
-# Database dumps (keep the example database, ignore all others)
+# Database dumps / local backups
 # -----------------------------------------------------------------------------
 *.sql
-!labpressexample.sql
-!sql/upgrade-*.sql
+*.sql.gz
 
 
 
@@ -64,5 +63,8 @@ __pycache__/
 # v1.2.0 部署配置与运行日志
 # -----------------------------------------------------------------------------
 /storage/config/site.php
+/storage/config/site.php.bak.*
 /storage/config/features.local.php
+/storage/install.lock
+/storage/install-rate.json
 /storage/logs/*.log

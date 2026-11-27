@@ -32,7 +32,7 @@ The following resources are most relevant to developers:
 - API endpoints in `api/`
 - Plugin examples in `plugins/`
 - Language packs in `languages/`
-- Database schema described in the `labpressexample.sql` file
+- Database schema described in `install/Schema.php`, with incremental changes in `migrations/`
 
 ## 2. Repository and Source Code
 
@@ -42,7 +42,7 @@ The official source code is hosted in the LabPress GitHub repository:
 https://github.com/GuiHui-huimy/LabPress
 ```
 
-The repository contains the full application source, example plugins, language files, and the sample database dump used for installation.
+The repository contains the full application source, example plugins, language files, installer classes and schema migrations.
 
 To clone the repository for development:
 
@@ -63,30 +63,30 @@ LabPress has minimal server requirements. A local development environment can be
 
 Ensure the following are available:
 
-- PHP 7.4 or higher
+- PHP 8.1 or higher
 - MySQL 5.7+ or MariaDB 10.3+
 - PHP extensions: `pdo`, `pdo_mysql`, `json`, `mbstring`, `session`, `fileinfo`, `zip`
 
-### 3.2 Create the Configuration File
+### 3.2 Run the Installer
 
-Copy the sample configuration to the active configuration path:
-
-```bash
-cp storage/config/site.example.php storage/config/site.php
-```
-
-Then update `storage/config/site.php` with the local database credentials. `storage/config/site.php` is environment-specific and should not be committed. Keep `storage/config/site.example.php` as the shareable template.
-
-### 3.3 Import the Sample Database
-
-Create a local database and import the sample SQL file.
+Create an empty database, then use the browser installer at `http://127.0.0.1:8080/install.php`. For a scripted setup:
 
 ```bash
-mysql -u root -p -e "CREATE DATABASE labpress CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
-mysql -u root -p labpress < labpressexample.sql
+php bin/install.php \
+  --db-host=127.0.0.1 \
+  --db-name=labpress_dev \
+  --db-user=root \
+  --db-pass='your-password' \
+  --site-url=http://127.0.0.1:8080 \
+  --site-name='LabPress Dev' \
+  --admin-username=admin \
+  --admin-password='dev-password' \
+  --demo
 ```
 
-### 3.4 Start the Built-in PHP Server
+The installer writes `storage/config/site.php` and `storage/install.lock`. `storage/config/site.php` is environment-specific and should not be committed.
+
+### 3.3 Start the Built-in PHP Server
 
 From the project root, run:
 
@@ -103,15 +103,10 @@ http://127.0.0.1:8080
 The admin panel is available at:
 
 ```
-http://127.0.0.1:8080/admin
+http://127.0.0.1:8080/admin/login.php
 ```
 
-The default administrator credentials in the sample database are:
-
-- **Username**: `root`
-- **Password**: `lab123456`
-
-Change this password immediately after logging in.
+There is no built-in default password. Use the administrator account created by the installer.
 
 ## 4. Project Architecture Summary
 
@@ -332,8 +327,9 @@ For security vulnerabilities, follow the process described in `SECURITY.md`. Do 
 
 - [ ] `storage/config/site.example.php` exists and `storage/config/site.php` is local-only.
 - [ ] The PHP extensions listed in section 3.1 are enabled.
-- [ ] The sample dump imports without a collation error.
-- [ ] The default password is changed before any non-local exposure.
+- [ ] `php bin/install.php` completes against an empty database without a schema error.
+- [ ] `storage/install.lock` is generated and `bin/migrate.php status` shows every migration as applied.
+- [ ] The installer-created administrator can log in; there is no built-in default password.
 - [ ] `php -l` passes on every modified PHP file.
 - [ ] Login, permissions, uploads, plugins, and language switching are tested manually.
 - [ ] Debug output is removed before commit.

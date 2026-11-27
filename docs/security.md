@@ -108,9 +108,9 @@ Enable HTTPS on the production server. HTTPS encrypts traffic between the browse
 
 Most hosting panels, including BaoTa, provide tools for obtaining and installing free SSL certificates.
 
-### 3.2 Change Default Credentials
+### 3.2 Use a Strong Installer Account
 
-The sample database includes a default administrator account. The credentials are publicly documented and must be changed immediately after installation.
+There is no built-in default administrator password. The installer creates the first administrator from the credentials you provide. Use a unique password of at least 8 characters, and change it immediately if you used a temporary value.
 
 Administrators should create strong, unique passwords and avoid reusing passwords across systems.
 
@@ -119,6 +119,8 @@ Administrators should create strong, unique passwords and avoid reusing password
 The following directories should not be publicly accessible through the web server:
 
 - `includes/`
+- `storage/`
+- `install.php` after installation
 - `plugins/` – except through the normal PHP loading process
 - `api/` – if direct access is not required, restrict it to application-level routing
 
@@ -182,7 +184,7 @@ When deploying LabPress in a shared or public environment, treat the admin panel
 
 ## 6. Operational Checks
 
-- [ ] The default `root` password has been changed.
+- [ ] The administrator and database credentials are unique and not defaults.
 - [ ] `storage/config/site.php` and `storage/logs/` are outside version control and not web-readable.
 - [ ] HTTPS is enabled and session cookies are marked `HttpOnly` and `SameSite=Lax`.
 - [ ] Only trusted users hold `all` or content-edit permissions.

@@ -72,7 +72,7 @@ Contributors who want to make code changes should set up a local development env
 
 Ensure the following are installed:
 
-- PHP 7.4 or higher
+- PHP 8.1 or higher
 - MySQL 5.7+ or MariaDB 10.3+
 - PHP extensions: `pdo`, `pdo_mysql`, `json`, `mbstring`, `session`, `fileinfo`, `zip`
 - Git
@@ -87,19 +87,33 @@ cd LabPress
 ### 4.3 Create a Local Database
 
 ```bash
-mysql -u root -p -e "CREATE DATABASE labpress_dev CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
-mysql -u root -p labpress_dev < labpressexample.sql
+mysql -u root -p -e "CREATE DATABASE labpress_dev CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 ```
 
-### 4.4 Configure the Database Connection
+### 4.4 Run the Installer
 
-Copy the sample configuration, then set the database credentials for the local environment:
+Use the browser installer:
+
+```text
+http://127.0.0.1:8080/install.php
+```
+
+Or use the CLI installer for a repeatable local setup:
 
 ```bash
-cp includes/config-sample.php includes/config.php
+php bin/install.php \
+  --db-host=127.0.0.1 \
+  --db-name=labpress_dev \
+  --db-user=root \
+  --db-pass='your-password' \
+  --site-url=http://127.0.0.1:8080 \
+  --site-name='LabPress Dev' \
+  --admin-username=admin \
+  --admin-password='dev-password' \
+  --demo
 ```
 
-Keep the local configuration private. Do not commit changes to `config.php` if they contain real credentials.
+The installer writes `storage/config/site.php` and `storage/install.lock`. `includes/config.php` is only a legacy fallback for old deployments; do not commit `storage/config/site.php`.
 
 ### 4.5 Start the Local Server
 
@@ -118,10 +132,10 @@ http://127.0.0.1:8080
 The admin panel is available at:
 
 ```
-http://127.0.0.1:8080/admin
+http://127.0.0.1:8080/admin/login.php
 ```
 
-Default administrator credentials are provided by the sample database. Change them after first login.
+Use the administrator account you created in the installer. There is no built-in default password.
 
 ## 5. Branching and Workflow
 
@@ -200,9 +214,10 @@ When adding new interface strings:
 
 If a change requires a new table or column:
 
-- Update the `labpressexample.sql` file so that new installations include the change.
+- Add the base table to `install/Schema.php` so fresh installs include it.
+- Add a versioned migration under `migrations/` for existing deployments.
 - Document the change in the relevant documentation page.
-- For plugin-specific tables, prefer creating tables during plugin activation rather than modifying the core SQL dump.
+- For plugin-specific tables, prefer creating tables during plugin activation rather than modifying the core schema.
 
 ## 7. Testing
 

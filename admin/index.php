@@ -174,5 +174,9 @@ $currentUser = $_SESSION['user'] ?? '';
 
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <script src="assets/js/admin.js"></script>
+    <?php if ($view === 'dashboard'): ?>
+    <script src="assets/js/echarts.min.js" defer></script>
+    <script src="assets/js/dashboard.js" defer></script>
+    <?php endif; ?>
 </body>
 </html>

@@ -184,7 +184,7 @@ The installation page is available under **Plugins > Install Plugin**. It contai
 
 Before uploading a plugin, the installation page displays the current server environment status:
 
-- PHP version (required: 7.4 or higher)
+- PHP version (required: 8.1 or higher)
 - ZipArchive extension (required)
 - `plugins/` directory writable status
 - `upload_max_filesize`
