@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://labpress.local/schemas/plugin.json",
+  "title": "LabPress Plugin Manifest v2",
+  "type": "object",
+  "required": ["slug", "name", "version", "description", "author", "license"],
+  "properties": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,63}$",
+      "description": "Stable plugin identifier and install directory name."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-.+][0-9A-Za-z.-]+)?$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "author": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "license": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "requires": {
+      "type": "object",
+      "properties": {
+        "core": {
+          "type": "string",
+          "description": "Version constraint such as >=1.2.0, ^1.3 or 1.3.*"
+        },
+        "php": {
+          "type": "string",
+          "description": "PHP version constraint such as >=8.1"
+        },
+        "plugins": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "provides": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "settings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "type", "label"],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]{1,63}$"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["text", "textarea", "select", "checkbox", "number", "color", "url", "email"]
+          },
+          "label": {"type": "string", "minLength": 1},
+          "default": {},
+          "required": {"type": "boolean"},
+          "maxlength": {"type": "integer", "minimum": 1},
+          "help": {"type": "string"},
+          "options": {
+            "type": "object",
+            "additionalProperties": {"type": "string"}
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "admin_pages": {
+      "type": "array",
+      "items": {"type": "object"}
+    }
+  },
+  "additionalProperties": false
+}

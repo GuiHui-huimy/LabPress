@@ -59,7 +59,7 @@ Example header:
  */
 ```
 
-The plugin scanner parses these fields when the plugin is discovered through the admin panel.
+The plugin scanner parses these fields when the plugin is discovered through the admin panel. In v1.3.0 and later, add a `plugin.json` manifest as the primary contract; the header remains a compatibility fallback for legacy plugins. See [Plugin Manifest v2](plugin-manifest.md).
 
 ## 3. Registering Actions and Filters
 

@@ -11,8 +11,8 @@ use Throwable;
 /**
  * 插件管理器 v1。
  *
- * 职责有限：发现、同步元数据、按 priority 启动、生命周期事件、异常隔离。
- * 不做 Composer 依赖解析，也不做运行时热卸载（PHP 无常驻进程）。
+ * 职责：发现、Manifest v2/旧头注释元数据同步、按 priority 启动、生命周期事件、
+ * 依赖检查与异常隔离。不做 Composer 依赖解析，也不做运行时热卸载（PHP 无常驻进程）。
  */
 final class Manager
 {
@@ -53,6 +53,7 @@ final class Manager
             return [];
         }
         $hasNewColumns = self::hasColumns('plugins', ['priority', 'requires_core', 'settings_json', 'data_policy', 'last_synced_at']);
+        $hasManifestColumn = self::hasColumns('plugins', ['manifest_json']);
         foreach ($slugs as $slug) {
             if ($slug === '.' || $slug === '..') {
                 continue;
@@ -63,6 +64,20 @@ final class Manager
             }
             $info = self::parseHeader($pluginFile);
             $info['slug'] = $slug;
+
+            $manifestResult = Manifest::fromDirectory($dir . '/' . $slug, true);
+            $manifest = $manifestResult['manifest'];
+            $info['manifest'] = $manifest;
+            $info['manifest_valid'] = (bool)$manifestResult['ok'];
+            $info['manifest_errors'] = $manifestResult['errors'];
+            $info['legacy_manifest'] = (bool)$manifestResult['legacy'];
+            if ($manifestResult['ok']) {
+                $info['name'] = (string)($manifest['name'] ?? $info['name']);
+                $info['description'] = (string)($manifest['description'] ?? $info['description']);
+                $info['version'] = (string)($manifest['version'] ?? $info['version']);
+                $info['author'] = (string)($manifest['author'] ?? $info['author']);
+                $info['requires_core'] = (string)($manifest['requires']['core'] ?? '');
+            }
             $items[] = $info;
 
             $exists = self::db()->prepare('SELECT id, version FROM plugins WHERE slug = ?');
@@ -74,6 +89,10 @@ final class Manager
                 if ($hasNewColumns) {
                     $columns = array_merge($columns, ['priority', 'requires_core', 'last_synced_at']);
                     $values = array_merge($values, [$info['priority'], $info['requires_core'], date('Y-m-d H:i:s')]);
+                }
+                if ($hasManifestColumn) {
+                    $columns[] = 'manifest_json';
+                    $values[] = json_encode($manifest, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 }
                 $sql = 'INSERT INTO plugins (' . implode(',', $columns) . ') VALUES (' . implode(',', array_fill(0, count($columns), '?')) . ')';
                 self::db()->prepare($sql)->execute($values);
@@ -89,6 +108,10 @@ final class Manager
                 $values[] = $info['priority'];
                 $values[] = $info['requires_core'];
                 $values[] = date('Y-m-d H:i:s');
+            }
+            if ($hasManifestColumn) {
+                $sets[] = 'manifest_json = ?';
+                $values[] = json_encode($manifest, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             }
             $values[] = $slug;
             self::db()->prepare('UPDATE plugins SET ' . implode(', ', $sets) . ' WHERE slug = ?')->execute($values);
@@ -139,6 +162,14 @@ final class Manager
             self::with($slug, function () use ($file): void {
                 require_once $file;
             });
+            $manifestResult = Manifest::fromDirectory(dirname($file), true);
+            if ($manifestResult['ok'] && !empty($manifestResult['manifest']['settings']) && !Settings::hasSchema($slug)) {
+                Settings::register(
+                    $slug,
+                    $manifestResult['manifest']['settings'],
+                    (string)($manifestResult['manifest']['name'] ?? $slug) . ' 设置'
+                );
+            }
             self::$loaded[$slug] = true;
         } catch (Throwable $e) {
             self::$loaded[$slug] = false;
@@ -163,15 +194,21 @@ final class Manager
         if ((int)$row['status'] === 1) {
             return true;
         }
-        $requires = trim((string)($row['requires_core'] ?? ''));
-        if ($requires !== '') {
-            $minimum = ltrim($requires, '>=< ');
-            if ($minimum !== '' && defined('LABPRESS_VERSION') && version_compare(preg_replace('/[^0-9.].*$/', '', (string)LABPRESS_VERSION), $minimum, '<')) {
-                self::$errors[$slug] = 'requires LabPress ' . $requires;
-                Logger::warning('Plugin requires newer LabPress', ['plugin' => $slug, 'requires' => $requires, 'current' => LABPRESS_VERSION]);
-                return false;
-            }
+
+        $manifestResult = Manifest::fromDirectory(self::root() . '/plugins/' . $slug, true);
+        if (!$manifestResult['ok']) {
+            self::$errors[$slug] = implode(' ', $manifestResult['errors']);
+            Logger::warning('Plugin manifest invalid', ['plugin' => $slug, 'errors' => $manifestResult['errors']]);
+            return false;
         }
+        $manifest = $manifestResult['manifest'];
+        $dependencyErrors = Dependencies::errors($slug, $manifest, self::db());
+        if ($dependencyErrors !== []) {
+            self::$errors[$slug] = implode(' ', $dependencyErrors);
+            Logger::warning('Plugin dependency check failed', ['plugin' => $slug, 'errors' => $dependencyErrors]);
+            return false;
+        }
+
         if (!self::load($slug)) {
             return false;
         }

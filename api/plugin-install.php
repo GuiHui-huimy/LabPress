@@ -30,7 +30,7 @@ if ((int)($_FILES['zip']['size'] ?? 0) > 20 * 1024 * 1024) {
     exit;
 }
 
-// 统一走安全解压流程（路径校验 / 单一根目录 / 体积上限 / 必须有 plugin.php）
+// 统一走 PackageInstaller：ZIP 校验 / staging / manifest / 原子替换 / 失败回滚
 $result = lp_install_plugin_zip($_FILES['zip']['tmp_name']);
 if (empty($result['success'])) {
     echo json_encode(['success' => false, 'error' => $result['error'] ?? '安装失败']);
@@ -43,4 +43,6 @@ echo json_encode([
     'success' => true,
     'slug' => $result['slug'],
     'plugin_info' => $result['plugin_info'],
+    'legacy' => (bool)($result['legacy'] ?? false),
+    'mode' => (string)($result['mode'] ?? 'install'),
 ]);

@@ -337,6 +337,12 @@ Stores plugin registration metadata and status.
 | `version` | `varchar(50)` | Plugin version. |
 | `author` | `varchar(255)` | Plugin author. |
 | `status` | `tinyint(1)` | `1` for active, `0` for inactive. |
+| `priority` | `smallint` | Boot order; lower values load first. |
+| `requires_core` | `varchar(50)` | Legacy mirror of `requires.core` from the manifest. |
+| `settings_json` | `json` | Values saved by the plugin Settings API. |
+| `manifest_json` | `json` | Cached Manifest v2 metadata. |
+| `data_policy` | `varchar(20)` | Reserved data-retention policy marker. |
+| `last_synced_at` | `datetime` | Last time `Manager::discover()` synchronized metadata. |
 | `installed_at` | `timestamp` | Registration time. |
 | `updated_at` | `timestamp` | Last update time. |
 

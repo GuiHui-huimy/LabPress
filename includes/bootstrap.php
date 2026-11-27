@@ -15,7 +15,7 @@ define('LABPRESS_BOOTSTRAPPED', true);
 define('LABPRESS_ROOT', dirname(__DIR__));
 define('LABPRESS_STORAGE', LABPRESS_ROOT . '/storage');
 if (!defined('LABPRESS_VERSION')) {
-    define('LABPRESS_VERSION', '1.2.0');
+    define('LABPRESS_VERSION', '1.3.0-dev');
 }
 
 spl_autoload_register(static function (string $class): void {

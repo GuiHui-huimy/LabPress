@@ -54,4 +54,17 @@ class LabPress
     {
         \LabPress\Assets::addScript((string)$url, (array)$deps, $version === null ? null : (string)$version, (bool)$footer);
     }
+
+    /**
+     * v1.3.0 插件设置：注册 schema 后由核心渲染表单，值存 plugins.settings_json。
+     */
+    public static function registerSettings($slug, $schema, $title = '', $permission = 'all')
+    {
+        \LabPress\Plugin\Settings::register((string)$slug, (array)$schema, (string)$title, (string)$permission);
+    }
+
+    public static function settings($slug, $key, $default = null)
+    {
+        return \LabPress\Plugin\Settings::get((string)$slug, (string)$key, $default);
+    }
 }

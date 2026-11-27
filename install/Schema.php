@@ -182,6 +182,7 @@ CREATE TABLE IF NOT EXISTS `plugins` (
   `priority` SMALLINT NOT NULL DEFAULT 10,
   `requires_core` VARCHAR(50) NULL,
   `settings_json` JSON NULL,
+  `manifest_json` JSON NULL,
   `data_policy` VARCHAR(20) NULL,
   `last_synced_at` DATETIME NULL,
   `installed_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,

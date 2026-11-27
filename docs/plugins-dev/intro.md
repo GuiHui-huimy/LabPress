@@ -2,7 +2,7 @@
 
 This chapter introduces the LabPress plugin system. It describes the architectural principles, the hook mechanism, the plugin structure, the lifecycle, and how plugins integrate with the core without modifying it. The information is intended for developers who want to understand the plugin system before creating their own extensions.
 
-For hands-on instructions on building a plugin, refer to [Developing Your First Plugin](develop.md). For a detailed list of available hooks, see [Hooks Reference](hooks-reference.md).
+For hands-on instructions on building a plugin, refer to [Developing Your First Plugin](develop.md). For the v1.3.0 manifest contract, see [Plugin Manifest v2](plugin-manifest.md). For a detailed list of available hooks, see [Hooks Reference](hooks-reference.md).
 
 ## 1. Overview
 

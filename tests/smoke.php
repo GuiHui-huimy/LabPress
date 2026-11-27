@@ -111,7 +111,7 @@ check('Plugin requires core', ($footerHeader['requires_core'] ?? '') !== '');
 // 迁移
 $runner = new \LabPress\Migration\Runner($pdo, __DIR__ . '/../migrations');
 $status = $runner->status();
-check('Migration count', count($status) === 3, (string)count($status));
+check('Migration count', count($status) === 4, (string)count($status));
 foreach ($status as $row) {
     check('Migration applied: ' . $row['version'], $row['applied'] === true);
 }

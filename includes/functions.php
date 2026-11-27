@@ -141,90 +141,34 @@ function lp_remove_dir($dir) {
 }
 
 /**
- * 安全解压并安装插件 ZIP（v1.1.1 应急校验版）
+ * 插件 ZIP 安装入口。v1.3.0 起由 PackageInstaller 负责：
+ * ZIP 条目录入检查、staging 解压、manifest 校验、原子替换与失败回滚。
+ *
  * 返回 ['success' => bool, 'error' => string, 'slug' => string, 'plugin_info' => array]
  */
 function lp_install_plugin_zip($zipPath) {
-    $pluginsDir = realpath(__DIR__ . '/../plugins');
-    if ($pluginsDir === false) {
-        return ['success' => false, 'error' => '插件目录不可用'];
+    $installer = new \LabPress\Plugin\PackageInstaller(__DIR__ . '/..');
+    $result = $installer->install((string)$zipPath);
+    if (empty($result['ok'])) {
+        return ['success' => false, 'error' => (string)($result['error'] ?? '插件安装失败')];
     }
 
-    $zip = new ZipArchive();
-    if ($zip->open($zipPath) !== true) {
-        return ['success' => false, 'error' => '无法打开 ZIP 文件'];
-    }
-
-    if ($zip->numFiles > 2000) {
-        $zip->close();
-        return ['success' => false, 'error' => '压缩包条目过多'];
-    }
-
-    $root = null;
-    $totalSize = 0;
-    for ($i = 0; $i < $zip->numFiles; $i++) {
-        $name = $zip->getNameIndex($i);
-        if ($name === false) {
-            continue;
-        }
-        $norm = ltrim(str_replace('\\', '/', $name), '/');
-        if (preg_match('#(^|/)\.\.(/|$)#', $norm) || preg_match('#^[A-Za-z]:#', $norm)) {
-            $zip->close();
-            return ['success' => false, 'error' => '压缩包包含非法路径'];
-        }
-        $parts = explode('/', $norm);
-        if ($root === null) {
-            $root = $parts[0];
-        }
-        if ($parts[0] !== $root) {
-            $zip->close();
-            return ['success' => false, 'error' => '压缩包必须只包含一个根目录'];
-        }
-        $stat = $zip->statIndex($i);
-        $totalSize += (int)($stat['size'] ?? 0);
-        if ($totalSize > 50 * 1024 * 1024) {
-            $zip->close();
-            return ['success' => false, 'error' => '压缩包解压后体积超过限制'];
-        }
-    }
-
-    if (!$root || !preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/', $root)) {
-        $zip->close();
-        return ['success' => false, 'error' => '插件根目录名不合法'];
-    }
-
-    $targetDir = $pluginsDir . DIRECTORY_SEPARATOR . $root;
-    if (file_exists($targetDir)) {
-        $zip->close();
-        return ['success' => false, 'error' => '插件目录已存在，请先删除再安装'];
-    }
-
-    if (!$zip->extractTo($pluginsDir)) {
-        $zip->close();
-        return ['success' => false, 'error' => '解压失败'];
-    }
-    $zip->close();
-
-    $pluginFile = $targetDir . '/plugin.php';
-    if (!file_exists($pluginFile)) {
-        lp_remove_dir($targetDir);
-        return ['success' => false, 'error' => '压缩包中未找到 plugin.php 文件'];
-    }
-
+    $manifest = is_array($result['manifest'] ?? null) ? $result['manifest'] : [];
     $pluginInfo = [
-        'slug' => $root,
-        'name' => $root,
-        'description' => '',
-        'version' => '',
-        'author' => '',
+        'slug' => (string)($result['slug'] ?? ''),
+        'name' => (string)($manifest['name'] ?? ''),
+        'description' => (string)($manifest['description'] ?? ''),
+        'version' => (string)($manifest['version'] ?? ''),
+        'author' => (string)($manifest['author'] ?? ''),
     ];
-    $content = (string)file_get_contents($pluginFile);
-    if (preg_match('/Plugin Name:\s*(.+)/i', $content, $m)) $pluginInfo['name'] = trim($m[1]);
-    if (preg_match('/Description:\s*(.+)/i', $content, $m)) $pluginInfo['description'] = trim($m[1]);
-    if (preg_match('/Version:\s*(.+)/i', $content, $m)) $pluginInfo['version'] = trim($m[1]);
-    if (preg_match('/Author:\s*(.+)/i', $content, $m)) $pluginInfo['author'] = trim($m[1]);
 
-    return ['success' => true, 'slug' => $root, 'plugin_info' => $pluginInfo];
+    return [
+        'success' => true,
+        'slug' => (string)($result['slug'] ?? ''),
+        'plugin_info' => $pluginInfo,
+        'legacy' => (bool)($result['legacy'] ?? false),
+        'mode' => (string)($result['mode'] ?? 'install'),
+    ];
 }
 
 /**
@@ -675,11 +619,16 @@ function __($key, $module = 'common') {
         $loadedModules[$module] = true;
     }
 
-    // 3. 显式插件语言包：只读取指定插件，不污染核心语言命名空间
+    // 3. 显式插件语言包：v1.3.0 优先 languages/{locale}/plugin.php，
+    //    旧插件仍保留 languages/{locale}.php 兼容一个版本。
     if (strpos($module, 'plugin:') === 0) {
         $pluginSlug = substr($module, 7);
         $pluginSlug = preg_replace('/[^a-zA-Z0-9_-]/', '', $pluginSlug);
-        $pluginLangFile = __DIR__ . "/../plugins/{$pluginSlug}/languages/{$locale}.php";
+        $pluginDir = __DIR__ . "/../plugins/{$pluginSlug}/languages/";
+        $pluginLangFile = $pluginDir . "{$locale}/plugin.php";
+        if (!file_exists($pluginLangFile)) {
+            $pluginLangFile = $pluginDir . "{$locale}.php";
+        }
         if (file_exists($pluginLangFile)) {
             $pluginLang = include $pluginLangFile;
             // 直接在当前调用中查找该插件语言包，避免污染全局 $lang

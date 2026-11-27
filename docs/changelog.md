@@ -4,6 +4,31 @@ All notable changes to LabPress are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Versions are ordered from newest to oldest.
 
+## [1.3.0-dev] - 2026-11-27
+
+v1.3.0 is the plugin-contract and i18n release. The first development stage establishes the plugin contract foundation; the i18n engine, translation workbench, and official plugin 3.0 rewrites are still in progress.
+
+### Added
+
+- Manifest v2 reader (`core/Plugin/Manifest.php`) with `plugin.json` validation, legacy header fallback, dependency declarations, `provides` / `conflicts`, and settings schemas. Includes `docs/plugins-dev/plugin.schema.json`.
+- Safe `PackageInstaller` with entry inspection before extraction, staging under `storage/tmp`, atomic swap, backup/rollback, and `storage/logs/plugin-install.log`.
+- Dependency checks before activation: `requires.core`, `requires.php`, `requires.plugins`, `provides`, and `conflicts`.
+- Plugin Settings API: manifest schema or `Settings::register()` → auto-rendered CSRF-protected form; values stored in `plugins.settings_json`; `Settings::get()` / `Settings::all()`.
+- `plugins.manifest_json` cache column via migration `20261127_0001_plugin_manifest`.
+- `docs/plugins-dev/plugin-manifest.md`.
+
+### Changed
+
+- `lp_install_plugin_zip()` now delegates to `PackageInstaller` instead of calling `ZipArchive::extractTo()` directly.
+- `Manager::discover()` normalizes and caches manifest metadata; `Manager::activate()` rejects missing/conflicting dependencies.
+- `LABPRESS_VERSION` is `1.3.0-dev` during this development stage.
+- Plugin language lookup prefers `plugins/{slug}/languages/{locale}/plugin.php`, then falls back to the legacy `plugins/{slug}/languages/{locale}.php`.
+
+### Notes
+
+- Remote install hardening, Registry-only plugin admin pages, i18n v2, translation workbench, and official plugin 3.0 are not complete in this stage.
+- MarketplaceCore remains a read-only reference; no MarketplaceCore file was modified.
+
 ## [1.2.0] - 2026-11-27
 
 LabPress 1.2.0 is the kernel and installation release. It hardens the bootstrap, database migrations, plugin lifecycle, admin routing, permissions, errors, and asset loading, replaces the SQL-dump install path with a browser/CLI installer, and adds a dashboard data overview. It does not add a marketplace UI.
